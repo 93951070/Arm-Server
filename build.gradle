@@ -37,12 +37,7 @@ dependencies {
     implementation fileTree(dir:'libs',includes:['*jar'])
     // https://mvnrepository.com/artifact/com.gitee.sunchenbin.mybatis.actable/mybatis-enhance-actable
     implementation group: 'com.gitee.sunchenbin.mybatis.actable', name: 'mybatis-enhance-actable', version: '1.0.8.1.RELEASE'
-    // https://mvnrepository.com/artifact/org.slf4j/slf4j-simple
-    implementation group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.30'
-    testImplementation group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.30'
-    // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
-    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
-    testImplementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
+    // slf4j-simple 已移除,使用 Spring Boot 自带的 Logback
     // https://mvnrepository.com/artifact/org.ow2.asm/asm-debug-all
     implementation group: 'org.ow2.asm', name: 'asm-debug-all', version: '5.0.3'
     // https://mvnrepository.com/artifact/commons-cli/commons-cli
