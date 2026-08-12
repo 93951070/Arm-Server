@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Armadillo Admin - Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; }
+        .sidebar { position: fixed; left: 0; top: 0; width: 220px; height: 100vh; background: #2c3e50; padding-top: 20px; }
+        .sidebar .logo { color: #fff; text-align: center; font-size: 20px; font-weight: 700; padding: 15px 0; border-bottom: 1px solid #34495e; }
+        .sidebar a { display: block; color: #bdc3c7; text-decoration: none; padding: 14px 24px; font-size: 14px; transition: all 0.3s; }
+        .sidebar a:hover { background: #34495e; color: #fff; }
+        .sidebar a.active { background: #3498db; color: #fff; }
+        .main-content { margin-left: 220px; padding: 30px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .page-header h1 { color: #2c3e50; font-size: 28px; }
+        .alert-error { background: #fee; color: #c33; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #fcc; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: #fff; border-radius: 10px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center; }
+        .stat-card .stat-value { font-size: 36px; font-weight: 700; color: #2c3e50; margin-bottom: 8px; }
+        .stat-card .stat-label { color: #7f8c8d; font-size: 14px; }
+        .stat-card.blue .stat-value { color: #3498db; }
+        .stat-card.green .stat-value { color: #27ae60; }
+        .stat-card.orange .stat-value { color: #e67e22; }
+        .stat-card.red .stat-value { color: #e74c3c; }
+        .stat-card.purple .stat-value { color: #9b59b6; }
+        .info-card { background: #fff; border-radius: 10px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .info-card h2 { color: #2c3e50; font-size: 18px; margin-bottom: 15px; }
+        .info-card p { color: #555; font-size: 14px; margin-bottom: 8px; }
+        .btn { display: inline-block; padding: 8px 20px; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; text-decoration: none; transition: opacity 0.3s; }
+        .btn-primary { background: #3498db; color: #fff; }
+        .btn-primary:hover { opacity: 0.9; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">Armadillo</div>
+        <a th:href="@{/dashboard}" class="active">Dashboard</a>
+        <a th:href="@{/users}">Users</a>
+        <a th:href="@{/cards}">Cards</a>
+        <a th:href="@{/notices}">Notices</a>
+        <a th:href="@{/versions}">Versions</a>
+        <a th:href="@{/logout}" style="position:absolute; bottom:20px; width:100%;">Logout</a>
+    </div>
+    <div class="main-content">
+        <div class="page-header">
+            <h1>Dashboard</h1>
+            <form method="post" action="/admin/cache/refresh" style="display:inline;">
+                <button type="submit" class="btn btn-primary">Refresh Cache</button>
+            </form>
+        </div>
+        <div class="alert-error" th:if="${dbError}" th:text="${dbError}"></div>
+        <div class="stats-grid">
+            <div class="stat-card blue">
+                <div class="stat-value" th:text="${totalUsers}">0</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-value" th:text="${activeUsers}">0</div>
+                <div class="stat-label">Active Users</div>
+            </div>
+            <div class="stat-card red">
+                <div class="stat-value" th:text="${expiredUsers}">0</div>
+                <div class="stat-label">Expired Users</div>
+            </div>
+            <div class="stat-card orange">
+                <div class="stat-value" th:text="${todayNewUsers}">0</div>
+                <div class="stat-label">Today New Users</div>
+            </div>
+            <div class="stat-card purple">
+                <div class="stat-value" th:text="${totalCards}">0</div>
+                <div class="stat-label">Total Cards</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-value" th:text="${unusedCards}">0</div>
+                <div class="stat-label">Unused Cards</div>
+            </div>
+            <div class="stat-card blue">
+                <div class="stat-value" th:text="${noticeCount}">0</div>
+                <div class="stat-label">Notices</div>
+            </div>
+        </div>
+        <div class="info-card">
+            <h2>Server Information</h2>
+            <p>Server Time: <span th:text="${serverTime}">--</span></p>
+            <p>Application: Armadillo Admin</p>
+            <p>Version: 1.3.2</p>
+        </div>
+    </div>
+</body>
+</html>

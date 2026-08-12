@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.concurrent.*;
 
 public class Constant {
-    private final static String Profile = "development";//production development
+    private final static String Profile = "production";//production development
     private final static String VER = "1.3.2";
     private final static boolean NettyDebug = false;
     private final static ThreadFactory HandlerFactory = new ThreadFactoryBuilder()
@@ -43,8 +43,8 @@ public class Constant {
             new File(System.getProperty("project.dir", "/www/arm/"))
             :
             new File(System.getProperty("project.dir", new File(System.getenv("SYSTEMDRIVE"), "arm").getAbsolutePath()));
-    public static int start = 8080;
-    public static int end = 8080;
+    public static int start = 10000;
+    public static int end = 10020;
     public static int handleCount = 256;
     public static int youpkShell = 15000;
     public static int xposedShell = 16000;

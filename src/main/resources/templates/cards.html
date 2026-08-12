@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Armadillo Admin - Cards</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; }
+        .sidebar { position: fixed; left: 0; top: 0; width: 220px; height: 100vh; background: #2c3e50; padding-top: 20px; }
+        .sidebar .logo { color: #fff; text-align: center; font-size: 20px; font-weight: 700; padding: 15px 0; border-bottom: 1px solid #34495e; }
+        .sidebar a { display: block; color: #bdc3c7; text-decoration: none; padding: 14px 24px; font-size: 14px; transition: all 0.3s; }
+        .sidebar a:hover { background: #34495e; color: #fff; }
+        .sidebar a.active { background: #3498db; color: #fff; }
+        .main-content { margin-left: 220px; padding: 30px; }
+        .page-header h1 { color: #2c3e50; font-size: 28px; margin-bottom: 20px; }
+        .alert-error { background: #fee; color: #c33; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #fcc; }
+        .alert-success { background: #d4edda; color: #155724; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #c3e6cb; }
+        .card-form { background: #fff; border-radius: 10px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .card-form h2 { color: #2c3e50; font-size: 18px; margin-bottom: 15px; }
+        .form-row { display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; color: #555; margin-bottom: 6px; font-size: 14px; font-weight: 600; }
+        .form-group input, .form-group select { padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #3498db; }
+        .btn { display: inline-block; padding: 10px 24px; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; color: #fff; }
+        .btn-primary { background: #3498db; }
+        .btn-delete { background: #95a5a6; padding: 6px 14px; font-size: 12px; }
+        .btn:hover { opacity: 0.85; }
+        .new-cards { background: #fff; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .new-cards h3 { color: #2c3e50; margin-bottom: 10px; font-size: 16px; }
+        .new-cards pre { background: #f8f9fa; padding: 15px; border-radius: 6px; font-size: 13px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        th { background: #3498db; color: #fff; padding: 14px 16px; text-align: left; font-size: 14px; }
+        td { padding: 12px 16px; border-bottom: 1px solid #eee; font-size: 13px; color: #555; }
+        tr:hover td { background: #f8f9fa; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .badge-green { background: #d4edda; color: #155724; }
+        .badge-red { background: #f8d7da; color: #721c24; }
+        .pagination { margin-top: 20px; text-align: center; }
+        .pagination a { display: inline-block; padding: 8px 14px; margin: 0 3px; border-radius: 5px; background: #fff; color: #3498db; text-decoration: none; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .pagination a:hover { background: #3498db; color: #fff; }
+        .pagination a.active { background: #3498db; color: #fff; }
+        .empty-msg { text-align: center; padding: 40px; color: #999; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">Armadillo</div>
+        <a th:href="@{/dashboard}">Dashboard</a>
+        <a th:href="@{/users}">Users</a>
+        <a th:href="@{/cards}" class="active">Cards</a>
+        <a th:href="@{/notices}">Notices</a>
+        <a th:href="@{/versions}">Versions</a>
+        <a th:href="@{/logout}" style="position:absolute; bottom:20px; width:100%;">Logout</a>
+    </div>
+    <div class="main-content">
+        <div class="page-header">
+            <h1>Card Management</h1>
+        </div>
+        <div class="alert-error" th:if="${dbError}" th:text="${dbError}"></div>
+        <div class="alert-success" th:if="${success}" th:text="${success}"></div>
+        <div class="new-cards" th:if="${newCards != null and !newCards.isEmpty()}">
+            <h3>Generated Cards</h3>
+            <pre th:text="${#strings.listJoin(newCards, '&#10;')}"></pre>
+        </div>
+        <div class="card-form">
+            <h2>Generate Cards</h2>
+            <form method="post" action="/admin/cards/create">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select name="type">
+                            <option value="1">Monthly Card</option>
+                            <option value="2">Yearly Card</option>
+                            <option value="3">Day Card</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Count</label>
+                        <input type="number" name="count" value="10" min="1" max="1000" style="width:100px;"/>
+                    </div>
+                    <div class="form-group">
+                        <label>Value</label>
+                        <input type="number" name="value" value="1" min="1" max="100" style="width:100px;"/>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">Generate</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Card Key</th>
+                    <th>Type</th>
+                    <th>Value</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="card : ${cards}">
+                    <td th:text="${card.id}"></td>
+                    <td th:text="${card.card}"></td>
+                    <td th:text="${card.type == 1 ? 'Monthly' : (card.type == 2 ? 'Yearly' : 'Day')}"></td>
+                    <td th:text="${card.count != null ? card.count : 0}"></td>
+                    <td>
+                        <span th:if="${card.usable}" class="badge badge-green">Available</span>
+                        <span th:unless="${card.usable}" class="badge badge-red">Used</span>
+                    </td>
+                    <td>
+                        <form method="post" action="/admin/cards/delete" style="display:inline;">
+                            <input type="hidden" name="cardId" th:value="${card.id}"/>
+                            <button type="submit" class="btn btn-delete" onclick="return confirm('Delete this card?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${cards == null or cards.isEmpty()}">
+                    <td colspan="6" class="empty-msg">No cards found</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="pagination" th:if="${totalPages > 1}">
+            <a th:href="@{/cards(page=0)}" th:if="${page > 0}">First</a>
+            <a th:href="@{/cards(page=${page - 1})}" th:if="${page > 0}">Prev</a>
+            <a th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+               th:href="@{/cards(page=${i})}"
+               th:text="${i + 1}"
+               th:classappend="${i == page} ? 'active' : ''"></a>
+            <a th:href="@{/cards(page=${page + 1})}" th:if="${page < totalPages - 1}">Next</a>
+            <a th:href="@{/cards(page=${totalPages - 1})}" th:if="${page < totalPages - 1}">Last</a>
+        </div>
+    </div>
+</body>
+</html>

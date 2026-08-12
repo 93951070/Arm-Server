@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Armadillo Admin - Notices</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; }
+        .sidebar { position: fixed; left: 0; top: 0; width: 220px; height: 100vh; background: #2c3e50; padding-top: 20px; }
+        .sidebar .logo { color: #fff; text-align: center; font-size: 20px; font-weight: 700; padding: 15px 0; border-bottom: 1px solid #34495e; }
+        .sidebar a { display: block; color: #bdc3c7; text-decoration: none; padding: 14px 24px; font-size: 14px; transition: all 0.3s; }
+        .sidebar a:hover { background: #34495e; color: #fff; }
+        .sidebar a.active { background: #3498db; color: #fff; }
+        .main-content { margin-left: 220px; padding: 30px; }
+        .page-header h1 { color: #2c3e50; font-size: 28px; margin-bottom: 20px; }
+        .alert-error { background: #fee; color: #c33; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #fcc; }
+        .notice-form { background: #fff; border-radius: 10px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .notice-form h2 { color: #2c3e50; font-size: 18px; margin-bottom: 15px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; color: #555; margin-bottom: 6px; font-size: 14px; font-weight: 600; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; font-family: inherit; }
+        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #3498db; }
+        .form-group textarea { min-height: 80px; resize: vertical; }
+        .btn { display: inline-block; padding: 10px 24px; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; color: #fff; }
+        .btn-primary { background: #3498db; }
+        .btn-delete { background: #95a5a6; padding: 6px 14px; font-size: 12px; }
+        .btn:hover { opacity: 0.85; }
+        .notice-list { display: flex; flex-direction: column; gap: 15px; }
+        .notice-item { background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .notice-item .notice-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .notice-item .notice-title { font-size: 16px; font-weight: 600; color: #2c3e50; }
+        .notice-item .notice-time { font-size: 12px; color: #999; }
+        .notice-item .notice-msg { color: #555; font-size: 14px; line-height: 1.6; margin-bottom: 10px; }
+        .empty-msg { text-align: center; padding: 40px; color: #999; font-size: 16px; background: #fff; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">Armadillo</div>
+        <a th:href="@{/dashboard}">Dashboard</a>
+        <a th:href="@{/users}">Users</a>
+        <a th:href="@{/cards}">Cards</a>
+        <a th:href="@{/notices}" class="active">Notices</a>
+        <a th:href="@{/versions}">Versions</a>
+        <a th:href="@{/logout}" style="position:absolute; bottom:20px; width:100%;">Logout</a>
+    </div>
+    <div class="main-content">
+        <div class="page-header">
+            <h1>Notice Management</h1>
+        </div>
+        <div class="alert-error" th:if="${dbError}" th:text="${dbError}"></div>
+        <div class="notice-form">
+            <h2>Publish Notice</h2>
+            <form method="post" action="/admin/notices/create">
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" name="title" placeholder="Enter notice title" required="required"/>
+                </div>
+                <div class="form-group">
+                    <label>Message</label>
+                    <textarea name="msg" placeholder="Enter notice content" required="required"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Publish</button>
+            </form>
+        </div>
+        <div class="notice-list">
+            <div class="notice-item" th:each="notice : ${notices}">
+                <div class="notice-header">
+                    <span class="notice-title" th:text="${notice.title}"></span>
+                    <span class="notice-time" th:text="${notice.time != null ? notice.time : ''}"></span>
+                </div>
+                <div class="notice-msg" th:text="${notice.msg}"></div>
+                <form method="post" action="/admin/notices/delete" style="display:inline;">
+                    <input type="hidden" name="id" th:value="${notice.id}"/>
+                    <button type="submit" class="btn btn-delete" onclick="return confirm('Delete this notice?')">Delete</button>
+                </form>
+            </div>
+            <div class="empty-msg" th:if="${notices == null or notices.isEmpty()}">
+                No notices found
+            </div>
+        </div>
+    </div>
+</body>
+</html>

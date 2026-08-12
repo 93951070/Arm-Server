@@ -43,14 +43,14 @@ public class SmartByteBufDecoder extends ByteToMessageDecoder {
                 logger.info(String.format("IP:%s -> 非法数据长度错误:%d", ((InetSocketAddress) ctx.channel().remoteAddress()).getAddress().getHostAddress(), buffer.readableBytes()));
             throw new DecoderException();
         }
-        /*byte[] request = new byte[dataLen];
+        byte[] request = new byte[dataLen];
         byte[] sign = new byte[signLen];
         buffer.readBytes(request).readBytes(sign);
         if (!RSASignature.getInstance().doCheck(request, sign)) {
             if (Constant.isDevelopment())
                 logger.info(String.format("IP:%s -> 数据验签失败", ((InetSocketAddress) ctx.channel().remoteAddress()).getAddress().getHostAddress()));
             throw new DecoderException();
-        }*/
+        }
         buffer.resetReaderIndex();
         buffer.skipBytes(9);
         out.add(buffer.retainedDuplicate());
