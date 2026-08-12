@@ -16,7 +16,7 @@ public class RSASignature {
 
     public RSASignature() {
         try {
-            publicKey = new String(LoaderRes.getInstance().getStaticResAsBytes("rsa/sign_public.txt"));
+            publicKey = new String(LoaderRes.getInstance().getStaticResAsBytes("rsa/sign_public.txt")).trim();
         } catch (IOException e) {
             e.printStackTrace();
         }
