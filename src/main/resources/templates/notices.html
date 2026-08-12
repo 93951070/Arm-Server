@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Armadillo Admin - Notices</title>
+    <title>Armadillo 管理后台 - 公告管理</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; }
@@ -38,30 +38,30 @@
 <body>
     <div class="sidebar">
         <div class="logo">Armadillo</div>
-        <a th:href="@{/dashboard}">Dashboard</a>
-        <a th:href="@{/users}">Users</a>
-        <a th:href="@{/cards}">Cards</a>
-        <a th:href="@{/notices}" class="active">Notices</a>
-        <a th:href="@{/versions}">Versions</a>
-        <a th:href="@{/logout}" style="position:absolute; bottom:20px; width:100%;">Logout</a>
+        <a th:href="@{/dashboard}">仪表盘</a>
+        <a th:href="@{/users}">用户管理</a>
+        <a th:href="@{/cards}">卡密管理</a>
+        <a th:href="@{/notices}" class="active">公告管理</a>
+        <a th:href="@{/versions}">版本管理</a>
+        <a th:href="@{/logout}" style="position:absolute; bottom:20px; width:100%;">退出登录</a>
     </div>
     <div class="main-content">
         <div class="page-header">
-            <h1>Notice Management</h1>
+            <h1>公告管理</h1>
         </div>
         <div class="alert-error" th:if="${dbError}" th:text="${dbError}"></div>
         <div class="notice-form">
-            <h2>Publish Notice</h2>
+            <h2>发布公告</h2>
             <form method="post" action="/admin/notices/create">
                 <div class="form-group">
-                    <label>Title</label>
-                    <input type="text" name="title" placeholder="Enter notice title" required="required"/>
+                    <label>标题</label>
+                    <input type="text" name="title" placeholder="请输入公告标题" required="required"/>
                 </div>
                 <div class="form-group">
-                    <label>Message</label>
-                    <textarea name="msg" placeholder="Enter notice content" required="required"></textarea>
+                    <label>内容</label>
+                    <textarea name="msg" placeholder="请输入公告内容" required="required"></textarea>
                 </div>
-                <button type="submit" class="btn btn-primary">Publish</button>
+                <button type="submit" class="btn btn-primary">发布</button>
             </form>
         </div>
         <div class="notice-list">
@@ -73,11 +73,11 @@
                 <div class="notice-msg" th:text="${notice.msg}"></div>
                 <form method="post" action="/admin/notices/delete" style="display:inline;">
                     <input type="hidden" name="id" th:value="${notice.id}"/>
-                    <button type="submit" class="btn btn-delete" onclick="return confirm('Delete this notice?')">Delete</button>
+                    <button type="submit" class="btn btn-delete" onclick="return confirm('确定删除该公告？')">删除</button>
                 </form>
             </div>
             <div class="empty-msg" th:if="${notices == null or notices.isEmpty()}">
-                No notices found
+                暂无公告数据
             </div>
         </div>
     </div>

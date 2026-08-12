@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Armadillo Admin - Versions</title>
+    <title>Armadillo 管理后台 - 版本管理</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; }
@@ -43,54 +43,54 @@
 <body>
     <div class="sidebar">
         <div class="logo">Armadillo</div>
-        <a th:href="@{/dashboard}">Dashboard</a>
-        <a th:href="@{/users}">Users</a>
-        <a th:href="@{/cards}">Cards</a>
-        <a th:href="@{/notices}">Notices</a>
-        <a th:href="@{/versions}" class="active">Versions</a>
-        <a th:href="@{/logout}" style="position:absolute; bottom:20px; width:100%;">Logout</a>
+        <a th:href="@{/dashboard}">仪表盘</a>
+        <a th:href="@{/users}">用户管理</a>
+        <a th:href="@{/cards}">卡密管理</a>
+        <a th:href="@{/notices}">公告管理</a>
+        <a th:href="@{/versions}" class="active">版本管理</a>
+        <a th:href="@{/logout}" style="position:absolute; bottom:20px; width:100%;">退出登录</a>
     </div>
     <div class="main-content">
         <div class="page-header">
-            <h1>Version Management</h1>
+            <h1>版本管理</h1>
         </div>
         <div class="alert-error" th:if="${dbError}" th:text="${dbError}"></div>
         <div class="version-form">
-            <h2>Add Version</h2>
+            <h2>添加版本</h2>
             <form method="post" action="/admin/versions/create">
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Version Code</label>
-                        <input type="number" name="versionCode" placeholder="e.g. 132" required="required" style="width:120px;"/>
+                        <label>版本号</label>
+                        <input type="number" name="versionCode" placeholder="如 132" required="required" style="width:120px;"/>
                     </div>
                     <div class="form-group">
-                        <label>Version Name</label>
-                        <input type="text" name="versionName" placeholder="e.g. 1.3.2" required="required" style="width:150px;"/>
+                        <label>版本名称</label>
+                        <input type="text" name="versionName" placeholder="如 1.3.2" required="required" style="width:150px;"/>
                     </div>
                     <div class="form-group">
                         <div class="checkbox-group">
                             <input type="checkbox" name="forceUpdate" value="true" id="forceUpdate"/>
-                            <label for="forceUpdate">Force Update</label>
+                            <label for="forceUpdate">强制更新</label>
                         </div>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Update Message</label>
-                    <textarea name="msg" placeholder="Enter update description" required="required"></textarea>
+                    <label>更新说明</label>
+                    <textarea name="msg" placeholder="请输入更新说明" required="required"></textarea>
                 </div>
-                <button type="submit" class="btn btn-primary">Add Version</button>
+                <button type="submit" class="btn btn-primary">添加版本</button>
             </form>
         </div>
         <table>
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Version Code</th>
-                    <th>Version Name</th>
-                    <th>Force Update</th>
-                    <th>Time</th>
-                    <th>Update Message</th>
-                    <th>Actions</th>
+                    <th>版本号</th>
+                    <th>版本名称</th>
+                    <th>强制更新</th>
+                    <th>时间</th>
+                    <th>更新说明</th>
+                    <th>操作</th>
                 </tr>
             </thead>
             <tbody>
@@ -99,20 +99,20 @@
                     <td th:text="${ver.version}"></td>
                     <td th:text="${ver.versionName}"></td>
                     <td>
-                        <span th:if="${ver.versionMode}" class="badge badge-red">Yes</span>
-                        <span th:unless="${ver.versionMode}" class="badge badge-gray">No</span>
+                        <span th:if="${ver.versionMode}" class="badge badge-red">是</span>
+                        <span th:unless="${ver.versionMode}" class="badge badge-gray">否</span>
                     </td>
                     <td th:text="${ver.time != null ? ver.time : '-'}"></td>
                     <td th:text="${ver.versionMsg != null ? ver.versionMsg : '-'}"></td>
                     <td>
                         <form method="post" action="/admin/versions/delete" style="display:inline;">
                             <input type="hidden" name="id" th:value="${ver.id}"/>
-                            <button type="submit" class="btn btn-delete" onclick="return confirm('Delete this version?')">Delete</button>
+                            <button type="submit" class="btn btn-delete" onclick="return confirm('确定删除该版本？')">删除</button>
                         </form>
                     </td>
                 </tr>
                 <tr th:if="${versions == null or versions.isEmpty()}">
-                    <td colspan="7" class="empty-msg">No versions found</td>
+                    <td colspan="7" class="empty-msg">暂无版本数据</td>
                 </tr>
             </tbody>
         </table>

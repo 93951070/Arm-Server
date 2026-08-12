@@ -140,17 +140,25 @@ public class Application {
     }
 
     private static void InitNetty(int bossThreads, int maxThreads) {
-        if (Epoll.isAvailable()) {
+        // Java 21+ 下 Netty Epoll 原生库存在兼容性问题(SIGSEGV 崩溃)
+        // 可通过 -Darmadillo.nio=true 强制使用 NIO,或检测到 Java 21+ 时自动禁用 Epoll
+        boolean forceNio = Boolean.getBoolean("armadillo.nio")
+                || Boolean.getBoolean("io.netty.transport.noNative")
+                || Double.parseDouble(System.getProperty("java.specification.version", "1.8")) >= 21;
+        boolean useEpoll = Epoll.isAvailable() && !forceNio;
+        if (useEpoll) {
             bossGroup = new EpollEventLoopGroup(bossThreads, Constant.getBossFactory());
             workerGroup = new EpollEventLoopGroup(maxThreads, Constant.getWorkerFactory());
             handlerGroup = new EpollEventLoopGroup(maxThreads, Constant.getHandlerFactory());
-        }else{
+            logger.info("Netty transport: Epoll (native)");
+        } else {
             bossGroup = new NioEventLoopGroup(bossThreads, Constant.getBossFactory());
             workerGroup = new NioEventLoopGroup(maxThreads, Constant.getWorkerFactory());
             handlerGroup = new NioEventLoopGroup(maxThreads, Constant.getHandlerFactory());
+            logger.info("Netty transport: NIO" + (forceNio ? " (forced, Java " + System.getProperty("java.version") + ")" : ""));
         }
         bootstrap.group(bossGroup, workerGroup)
-                .channel(OsUtils.isOSLinux() ? EpollServerSocketChannel.class : NioServerSocketChannel.class)
+                .channel(useEpoll ? EpollServerSocketChannel.class : NioServerSocketChannel.class)
                 .childHandler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     public void initChannel(SocketChannel ch) throws Exception {
@@ -171,10 +179,12 @@ public class Application {
                     }
                 })
                 .option(ChannelOption.SO_BACKLOG, 256)
-                .childOption(EpollChannelOption.SO_REUSEPORT, true)
                 .childOption(ChannelOption.TCP_NODELAY, true)
                 .childOption(ChannelOption.SO_KEEPALIVE, false)
                 .handler(new LoggingHandler(LogLevel.DEBUG));
+        if (useEpoll) {
+            bootstrap.childOption(EpollChannelOption.SO_REUSEPORT, true);
+        }
     }
 
     private static void InitDebugLog() {

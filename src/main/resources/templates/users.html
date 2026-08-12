@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Armadillo Admin - Users</title>
+    <title>Armadillo 管理后台 - 用户管理</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; }
@@ -34,16 +34,16 @@
 <body>
     <div class="sidebar">
         <div class="logo">Armadillo</div>
-        <a th:href="@{/dashboard}">Dashboard</a>
-        <a th:href="@{/users}" class="active">Users</a>
-        <a th:href="@{/cards}">Cards</a>
-        <a th:href="@{/notices}">Notices</a>
-        <a th:href="@{/versions}">Versions</a>
-        <a th:href="@{/logout}" style="position:absolute; bottom:20px; width:100%;">Logout</a>
+        <a th:href="@{/dashboard}">仪表盘</a>
+        <a th:href="@{/users}" class="active">用户管理</a>
+        <a th:href="@{/cards}">卡密管理</a>
+        <a th:href="@{/notices}">公告管理</a>
+        <a th:href="@{/versions}">版本管理</a>
+        <a th:href="@{/logout}" style="position:absolute; bottom:20px; width:100%;">退出登录</a>
     </div>
     <div class="main-content">
         <div class="page-header">
-            <h1>User Management</h1>
+            <h1>用户管理</h1>
         </div>
         <div class="alert-error" th:if="${dbError}" th:text="${dbError}"></div>
         <table>
@@ -51,11 +51,11 @@
                 <tr>
                     <th>ID</th>
                     <th>OpenID</th>
-                    <th>Email</th>
-                    <th>Login Count</th>
-                    <th>Value</th>
-                    <th>Expire Time</th>
-                    <th>Actions</th>
+                    <th>邮箱</th>
+                    <th>登录次数</th>
+                    <th>剩余天数</th>
+                    <th>到期时间</th>
+                    <th>操作</th>
                 </tr>
             </thead>
             <tbody>
@@ -69,33 +69,33 @@
                     <td>
                         <form method="post" action="/admin/users/ban" style="display:inline;">
                             <input type="hidden" name="userId" th:value="${user.id}"/>
-                            <button type="submit" class="btn btn-ban" onclick="return confirm('Ban this user?')">Ban</button>
+                            <button type="submit" class="btn btn-ban" onclick="return confirm('确定封禁该用户？')">封禁</button>
                         </form>
                         <form method="post" action="/admin/users/unban" style="display:inline;">
                             <input type="hidden" name="userId" th:value="${user.id}"/>
                             <input type="hidden" name="days" value="30"/>
-                            <button type="submit" class="btn btn-unban">Unban</button>
+                            <button type="submit" class="btn btn-unban">解封</button>
                         </form>
                         <form method="post" action="/admin/users/delete" style="display:inline;">
                             <input type="hidden" name="userId" th:value="${user.id}"/>
-                            <button type="submit" class="btn btn-delete" onclick="return confirm('Delete this user?')">Delete</button>
+                            <button type="submit" class="btn btn-delete" onclick="return confirm('确定删除该用户？')">删除</button>
                         </form>
                     </td>
                 </tr>
                 <tr th:if="${users == null or users.isEmpty()}">
-                    <td colspan="7" class="empty-msg">No users found</td>
+                    <td colspan="7" class="empty-msg">暂无用户数据</td>
                 </tr>
             </tbody>
         </table>
         <div class="pagination" th:if="${totalPages > 1}">
-            <a th:href="@{/users(page=0)}" th:if="${page > 0}">First</a>
-            <a th:href="@{/users(page=${page - 1})}" th:if="${page > 0}">Prev</a>
+            <a th:href="@{/users(page=0)}" th:if="${page > 0}">首页</a>
+            <a th:href="@{/users(page=${page - 1})}" th:if="${page > 0}">上一页</a>
             <a th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
                th:href="@{/users(page=${i})}"
                th:text="${i + 1}"
                th:classappend="${i == page} ? 'active' : ''"></a>
-            <a th:href="@{/users(page=${page + 1})}" th:if="${page < totalPages - 1}">Next</a>
-            <a th:href="@{/users(page=${totalPages - 1})}" th:if="${page < totalPages - 1}">Last</a>
+            <a th:href="@{/users(page=${page + 1})}" th:if="${page < totalPages - 1}">下一页</a>
+            <a th:href="@{/users(page=${totalPages - 1})}" th:if="${page < totalPages - 1}">末页</a>
         </div>
     </div>
 </body>

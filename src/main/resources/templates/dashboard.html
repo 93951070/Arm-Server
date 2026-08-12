@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Armadillo Admin - Dashboard</title>
+    <title>Armadillo 管理后台 - 仪表盘</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; }
@@ -36,56 +36,56 @@
 <body>
     <div class="sidebar">
         <div class="logo">Armadillo</div>
-        <a th:href="@{/dashboard}" class="active">Dashboard</a>
-        <a th:href="@{/users}">Users</a>
-        <a th:href="@{/cards}">Cards</a>
-        <a th:href="@{/notices}">Notices</a>
-        <a th:href="@{/versions}">Versions</a>
-        <a th:href="@{/logout}" style="position:absolute; bottom:20px; width:100%;">Logout</a>
+        <a th:href="@{/dashboard}" class="active">仪表盘</a>
+        <a th:href="@{/users}">用户管理</a>
+        <a th:href="@{/cards}">卡密管理</a>
+        <a th:href="@{/notices}">公告管理</a>
+        <a th:href="@{/versions}">版本管理</a>
+        <a th:href="@{/logout}" style="position:absolute; bottom:20px; width:100%;">退出登录</a>
     </div>
     <div class="main-content">
         <div class="page-header">
-            <h1>Dashboard</h1>
+            <h1>仪表盘</h1>
             <form method="post" action="/admin/cache/refresh" style="display:inline;">
-                <button type="submit" class="btn btn-primary">Refresh Cache</button>
+                <button type="submit" class="btn btn-primary">刷新缓存</button>
             </form>
         </div>
         <div class="alert-error" th:if="${dbError}" th:text="${dbError}"></div>
         <div class="stats-grid">
             <div class="stat-card blue">
                 <div class="stat-value" th:text="${totalUsers}">0</div>
-                <div class="stat-label">Total Users</div>
+                <div class="stat-label">总用户数</div>
             </div>
             <div class="stat-card green">
                 <div class="stat-value" th:text="${activeUsers}">0</div>
-                <div class="stat-label">Active Users</div>
+                <div class="stat-label">有效用户</div>
             </div>
             <div class="stat-card red">
                 <div class="stat-value" th:text="${expiredUsers}">0</div>
-                <div class="stat-label">Expired Users</div>
+                <div class="stat-label">已过期用户</div>
             </div>
             <div class="stat-card orange">
                 <div class="stat-value" th:text="${todayNewUsers}">0</div>
-                <div class="stat-label">Today New Users</div>
+                <div class="stat-label">今日新增</div>
             </div>
             <div class="stat-card purple">
                 <div class="stat-value" th:text="${totalCards}">0</div>
-                <div class="stat-label">Total Cards</div>
+                <div class="stat-label">总卡密数</div>
             </div>
             <div class="stat-card green">
                 <div class="stat-value" th:text="${unusedCards}">0</div>
-                <div class="stat-label">Unused Cards</div>
+                <div class="stat-label">未使用卡密</div>
             </div>
             <div class="stat-card blue">
                 <div class="stat-value" th:text="${noticeCount}">0</div>
-                <div class="stat-label">Notices</div>
+                <div class="stat-label">公告数量</div>
             </div>
         </div>
         <div class="info-card">
-            <h2>Server Information</h2>
-            <p>Server Time: <span th:text="${serverTime}">--</span></p>
-            <p>Application: Armadillo Admin</p>
-            <p>Version: 1.3.2</p>
+            <h2>服务器信息</h2>
+            <p>服务器时间：<span th:text="${serverTime}">--</span></p>
+            <p>应用名称：Armadillo 管理后台</p>
+            <p>版本号：1.3.2</p>
         </div>
     </div>
 </body>

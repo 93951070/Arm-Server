@@ -37,7 +37,9 @@ public class RedisUtil {
             pool = new JedisPool(jedisPoolConfig, ip, port, 10000);
         }
         Config config = new Config();
-        config.setTransportMode(OsUtils.isOSLinux() ? TransportMode.EPOLL : TransportMode.NIO);
+        // Java 21+ 下 Epoll 原生库不兼容,强制使用 NIO
+        boolean forceNio = Double.parseDouble(System.getProperty("java.specification.version", "1.8")) >= 21;
+        config.setTransportMode(OsUtils.isOSLinux() && !forceNio ? TransportMode.EPOLL : TransportMode.NIO);
         SingleServerConfig singleServer = config.useSingleServer();
         singleServer.setAddress("redis://" + ip + ":" + port);
         if (password != null && !"".equals(password))

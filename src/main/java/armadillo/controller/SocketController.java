@@ -98,7 +98,7 @@ public class SocketController implements Runnable{
                     Receive(type, jsonObject, languageEnums);
                 } else {
                     RSAUtils rsaUtils = new RSAUtils();
-                    request = rsaUtils.decrypt(request, rsaUtils.getPublicKey(Base64.getDecoder().decode(LoaderRes.getInstance().getStaticResAsBytes("rsa/sign_public.txt"))));
+                    request = rsaUtils.decrypt(request, rsaUtils.getPublicKey(Base64.getDecoder().decode(new String(LoaderRes.getInstance().getStaticResAsBytes("rsa/sign_public.txt")).trim())));
                     JSONObject jsonObject = JSONObject.parseObject(new String(request, StandardCharsets.UTF_8));
                     LanguageEnums languageEnums = LanguageEnums.DEFAULT;
                     switch (jsonObject.getString("u")) {
@@ -1501,7 +1501,7 @@ public class SocketController implements Runnable{
     public void Writr(Result result, Charset charset) {
         try {
             RSAUtils rsaUtils = new RSAUtils();
-            byte[] body = rsaUtils.encrypt(JSONObject.toJSONString(result).getBytes(charset), rsaUtils.getPrivateKey(Base64.getDecoder().decode(LoaderRes.getInstance().getStaticResAsBytes("rsa/en_private.txt"))));
+            byte[] body = rsaUtils.encrypt(JSONObject.toJSONString(result).getBytes(charset), rsaUtils.getPrivateKey(Base64.getDecoder().decode(new String(LoaderRes.getInstance().getStaticResAsBytes("rsa/en_private.txt")).trim())));
             ByteBuf byteBuf = ctx.alloc().buffer(body.length + 9 + 4);
             byteBuf
                     .writeBytes("Armadillo".getBytes())

@@ -27,8 +27,7 @@ public class SmartByteBufDecoder extends ByteToMessageDecoder {
         byte[] magic = new byte[9];
         buffer.readBytes(magic);
         if (!Arrays.equals(magic, "Armadillo".getBytes())) {
-            if (Constant.isDevelopment())
-                logger.info(String.format("IP:%s -> Magic错误:%s", ((InetSocketAddress) ctx.channel().remoteAddress()).getAddress().getHostAddress(), new String(magic)));
+            logger.warn(String.format("IP:%s -> Magic错误:%s", ((InetSocketAddress) ctx.channel().remoteAddress()).getAddress().getHostAddress(), new String(magic)));
             throw new DecoderException();
         }
         buffer.skipBytes(4);
@@ -39,16 +38,18 @@ public class SmartByteBufDecoder extends ByteToMessageDecoder {
             buffer.readerIndex(beginIndex);
             return;
         } else if (buffer.readableBytes() > dataLength) {
-            if (Constant.isDevelopment())
-                logger.info(String.format("IP:%s -> 非法数据长度错误:%d", ((InetSocketAddress) ctx.channel().remoteAddress()).getAddress().getHostAddress(), buffer.readableBytes()));
+            logger.warn(String.format("IP:%s -> 非法数据长度错误: readable=%d, expected=%d (dataLen=%d, signLen=%d)", 
+                ((InetSocketAddress) ctx.channel().remoteAddress()).getAddress().getHostAddress(), 
+                buffer.readableBytes(), dataLength, dataLen, signLen));
             throw new DecoderException();
         }
         byte[] request = new byte[dataLen];
         byte[] sign = new byte[signLen];
         buffer.readBytes(request).readBytes(sign);
         if (!RSASignature.getInstance().doCheck(request, sign)) {
-            if (Constant.isDevelopment())
-                logger.info(String.format("IP:%s -> 数据验签失败", ((InetSocketAddress) ctx.channel().remoteAddress()).getAddress().getHostAddress()));
+            logger.warn(String.format("IP:%s -> 数据验签失败, dataLen=%d, signLen=%d", 
+                ((InetSocketAddress) ctx.channel().remoteAddress()).getAddress().getHostAddress(),
+                dataLen, signLen));
             throw new DecoderException();
         }
         buffer.resetReaderIndex();
