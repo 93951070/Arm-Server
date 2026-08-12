@@ -1,16 +1,17 @@
 plugins {
-    id 'java'
+    id 'java-library'
 }
 
 group 'dex2jar'
 version '1.0-SNAPSHOT'
 
 repositories {
+    maven { url 'https://maven.aliyun.com/repository/public' }
     mavenCentral()
 }
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
-    testCompile (group: 'org.apache.commons', name: 'commons-compress', version:'1.4.1')
-    compile 'org.ow2.asm:asm-debug-all:5.0.3'
+    testImplementation group: 'junit', name: 'junit', version: '4.12'
+    testImplementation (group: 'org.apache.commons', name: 'commons-compress', version:'1.4.1')
+    api 'org.ow2.asm:asm-debug-all:5.0.3'
 }

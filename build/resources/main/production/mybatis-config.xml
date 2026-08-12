@@ -20,7 +20,7 @@
         <setting name="defaultStatementTimeout" value="25000" />
     </settings>
     <typeAliases>
-        <package name="armadillo.dao" />
+        <package name="armadillo.model" />
     </typeAliases>
     <environments default="production">
         <environment id="production">
@@ -37,6 +37,17 @@
         </environment>
     </environments>
     <mappers>
-        <package name="armadillo.mapper"/>
+        <mapper class="armadillo.mapper.SysUserMapper"/>
+        <mapper class="armadillo.mapper.SysCardMapper"/>
+        <mapper class="armadillo.mapper.SysNoticeMapper"/>
+        <mapper class="armadillo.mapper.SysVerMapper"/>
+        <mapper class="armadillo.mapper.UserSoftMapper"/>
+        <mapper class="armadillo.mapper.SingleCardMapper"/>
+        <mapper class="armadillo.mapper.SingleTrialMapper"/>
+        <mapper class="armadillo.mapper.SingleVerifyMapper"/>
+        <mapper class="armadillo.mapper.RemoteNoticeMapper"/>
+        <mapper class="armadillo.mapper.SoftAdmobMapper"/>
+        <mapper class="armadillo.mapper.SoftCustomMapper"/>
+        <mapper class="armadillo.mapper.SoftUpdateMapper"/>
     </mappers>
 </configuration>
