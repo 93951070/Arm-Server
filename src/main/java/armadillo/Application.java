@@ -94,12 +94,22 @@ public class Application {
                 logger.info(String.format("Task Thread Pool:%d", Constant.getTask_pool().getActiveCount()));
                 logger.info(String.format("Youpk Bind Port:%d", Constant.youpkShell));
                 logger.info(String.format("Xposed Bind Port:%d", Constant.xposedShell));
-                YoupkServer = new ServerSocket(Constant.youpkShell);
-                YoupkServer.setReceiveBufferSize(1024 * 1024 * 20);
-                XposedServer = new ServerSocket(Constant.xposedShell);
-                XposedServer.setReceiveBufferSize(1024 * 1024 * 20);
-                Constant.getRoot_pool().execute(Application::XposedShellRun);
-                Constant.getRoot_pool().execute(Application::ShellRun);
+                try {
+                    YoupkServer = new ServerSocket(Constant.youpkShell);
+                    YoupkServer.setReceiveBufferSize(1024 * 1024 * 20);
+                    Constant.getRoot_pool().execute(Application::ShellRun);
+                    logger.info(String.format("Youpk shell server started on port %d", Constant.youpkShell));
+                } catch (Exception e) {
+                    logger.warn(String.format("Failed to bind Youpk shell port %d: %s (shell service unavailable)", Constant.youpkShell, e.getMessage()));
+                }
+                try {
+                    XposedServer = new ServerSocket(Constant.xposedShell);
+                    XposedServer.setReceiveBufferSize(1024 * 1024 * 20);
+                    Constant.getRoot_pool().execute(Application::XposedShellRun);
+                    logger.info(String.format("Xposed shell server started on port %d", Constant.xposedShell));
+                } catch (Exception e) {
+                    logger.warn(String.format("Failed to bind Xposed shell port %d: %s (shell service unavailable)", Constant.xposedShell, e.getMessage()));
+                }
                 for (int i = 0; i <= Constant.end - Constant.start; i++)
                     Constant.getRoot_pool().execute(new bindServer(Constant.start + i, bootstrap));
                 Constant.getRoot_pool().execute(new bindServer(Constant.httpport, bootstrap));
@@ -278,8 +288,12 @@ public class Application {
             }, time, 1000 * 60 * 60 * 24);
         }
         /**
-         * 指令监听
+         * 指令监听 - 仅在交互模式(有控制台)下启用,非交互模式(nohup/systemd等)下跳过
          */
+        if (System.console() == null) {
+            logger.info("Non-interactive mode detected, console command listener disabled.");
+            return;
+        }
         Scanner scanner = new Scanner(System.in);
         Options options = new Options();
         {
@@ -654,6 +668,10 @@ public class Application {
     }
 
     private static void ShellRun() {
+        if (YoupkServer == null) {
+            logger.warn("YoupkServer is not available, shell service not started.");
+            return;
+        }
         logger.info("Shell Start Success");
         while (true) {
             ShellHelper helper = null;
@@ -691,6 +709,10 @@ public class Application {
     }
 
     private static void XposedShellRun() {
+        if (XposedServer == null) {
+            logger.warn("XposedServer is not available, xposed shell service not started.");
+            return;
+        }
         logger.info("Xposed Shell Start Success");
         while (true) {
             ShellHelper helper = null;
