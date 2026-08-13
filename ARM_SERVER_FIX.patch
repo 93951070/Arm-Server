@@ -1,0 +1,232 @@
+--- a/src/main/resources/production/redis.properties
++++ b/src/main/resources/production/redis.properties
+@@ -2,4 +2,7 @@
+ redis.port=6379
+ redis.password=
+ redis.maxTotal=1000
+-redis.maxIdle=10
+\ No newline at end of file
++redis.maxIdle=10
++redis.maxWaitMillis=1000
++redis.testOnBorrow=true
++redis.testOnReturn=true
+--- a/base/src/main/java/armadillo/utils/RedisUtil.java
++++ b/base/src/main/java/armadillo/utils/RedisUtil.java
+@@ -22,15 +22,17 @@
+     private static RedisUtil redisUtil;
+ 
+     private RedisUtil() {
+-        ip = SysConfigUtil.getSysConfigUtil("redis.properties").getString("redis.host");
+-        port = SysConfigUtil.getSysConfigUtil("redis.properties").getInteger("redis.port");
+-        password = SysConfigUtil.getSysConfigUtil("redis.properties").getString("redis.password");
++        com.alibaba.fastjson.JSONObject redisConfig = SysConfigUtil.getSysConfigUtil("redis.properties");
++        ip = getString(redisConfig, "redis.host", "127.0.0.1");
++        port = getInt(redisConfig, "redis.port", 6379);
++        password = getString(redisConfig, "redis.password", "");
++
+         JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
+-        jedisPoolConfig.setMaxTotal(SysConfigUtil.getSysConfigUtil("redis.properties").getInteger("redis.maxTotal"));
+-        jedisPoolConfig.setMaxIdle(SysConfigUtil.getSysConfigUtil("redis.properties").getInteger("redis.maxIdle"));
+-        jedisPoolConfig.setMaxWaitMillis(SysConfigUtil.getSysConfigUtil("redis.properties").getLong("redis.maxWaitMillis"));
+-        jedisPoolConfig.setTestOnBorrow(SysConfigUtil.getSysConfigUtil("redis.properties").getBoolean("redis.testOnBorrow"));
+-        jedisPoolConfig.setTestOnReturn(SysConfigUtil.getSysConfigUtil("redis.properties").getBoolean("redis.testOnReturn"));
++        jedisPoolConfig.setMaxTotal(getInt(redisConfig, "redis.maxTotal", 1000));
++        jedisPoolConfig.setMaxIdle(getInt(redisConfig, "redis.maxIdle", 10));
++        jedisPoolConfig.setMaxWaitMillis(getLong(redisConfig, "redis.maxWaitMillis", 1000L));
++        jedisPoolConfig.setTestOnBorrow(getBoolean(redisConfig, "redis.testOnBorrow", true));
++        jedisPoolConfig.setTestOnReturn(getBoolean(redisConfig, "redis.testOnReturn", true));
+         if (password != null && !"".equals(password)) {
+             pool = new JedisPool(jedisPoolConfig, ip, port, 10000, password);
+         } else {
+@@ -51,6 +53,27 @@
+         redissonClient = Redisson.create(config);
+     }
+ 
++
++    private static String getString(com.alibaba.fastjson.JSONObject config, String key, String defaultValue) {
++        String value = config.getString(key);
++        return value == null ? defaultValue : value;
++    }
++
++    private static int getInt(com.alibaba.fastjson.JSONObject config, String key, int defaultValue) {
++        Integer value = config.getInteger(key);
++        return value == null ? defaultValue : value;
++    }
++
++    private static long getLong(com.alibaba.fastjson.JSONObject config, String key, long defaultValue) {
++        Long value = config.getLong(key);
++        return value == null ? defaultValue : value;
++    }
++
++    private static boolean getBoolean(com.alibaba.fastjson.JSONObject config, String key, boolean defaultValue) {
++        Boolean value = config.getBoolean(key);
++        return value == null ? defaultValue : value;
++    }
++
+     public RedissonClient getRedissonClient() {
+         return redissonClient;
+     }
+--- a/src/main/java/armadillo/controller/SocketController.java
++++ b/src/main/java/armadillo/controller/SocketController.java
+@@ -55,8 +55,11 @@
+     }
+ 
+     public void run() {
++        int type = -1;
++        LanguageEnums responseLanguage = LanguageEnums.DEFAULT;
++        Charset responseCharset = Charset.forName("GBK");
+         try {
+-            int type = msg.readInt();
++            type = msg.readInt();
+             int request_len = msg.readInt();
+             msg.skipBytes(4);
+             byte[] request = new byte[request_len];
+@@ -86,41 +89,49 @@
+                 if (dataInputStream.readShort() == 8075) {
+                     request = readGzip(request);
+                     JSONObject jsonObject = JSONObject.parseObject(new String(request, StandardCharsets.UTF_8));
+-                    LanguageEnums languageEnums = LanguageEnums.DEFAULT;
+-                    switch (jsonObject.getString("u")) {
+-                        case "zh":
+-                            languageEnums = LanguageEnums.ZH;
+-                            break;
+-                        case "ru":
+-                            languageEnums = LanguageEnums.RU;
+-                            break;
+-                    }
++                    LanguageEnums languageEnums = resolveLanguage(jsonObject);
++                    responseLanguage = languageEnums;
++                    responseCharset = resolveCharset(jsonObject);
+                     Receive(type, jsonObject, languageEnums);
+                 } else {
+                     RSAUtils rsaUtils = new RSAUtils();
+                     request = rsaUtils.decrypt(request, rsaUtils.getPublicKey(Base64.getDecoder().decode(new String(LoaderRes.getInstance().getStaticResAsBytes("rsa/sign_public.txt")).trim())));
+                     JSONObject jsonObject = JSONObject.parseObject(new String(request, StandardCharsets.UTF_8));
+-                    LanguageEnums languageEnums = LanguageEnums.DEFAULT;
+-                    switch (jsonObject.getString("u")) {
+-                        case "zh":
+-                            languageEnums = LanguageEnums.ZH;
+-                            break;
+-                        case "ru":
+-                            languageEnums = LanguageEnums.RU;
+-                            break;
+-                    }
++                    LanguageEnums languageEnums = resolveLanguage(jsonObject);
++                    responseLanguage = languageEnums;
++                    responseCharset = resolveCharset(jsonObject);
+                     Receive(type, jsonObject, languageEnums);
+                 }
+             }
+         } catch (Exception e) {
+-            e.printStackTrace();
+-            ctx.close();
++            logger.error(String.format("Socket request failed: client=%s, type=%d, error=%s: %s",
++                    inetSocketAddress, type, e.getClass().getSimpleName(), e.getMessage()), e);
++            if (ctx.channel().isActive()) {
++                Writr(new Result(ResultBasic.UNKNOWNFAIL, null, responseLanguage), responseCharset);
++            }
+         } finally {
+-            ctx.close();
++            // Writr() closes the channel only after writeAndFlush completes. Closing here can race
++            // with the asynchronous write and cause the client to receive EOF/0 bytes.
+             ReferenceCountUtil.release(msg);
+         }
+     }
+ 
++    private LanguageEnums resolveLanguage(JSONObject jsonObject) {
++        String language = jsonObject.getString("u");
++        if ("zh".equals(language))
++            return LanguageEnums.ZH;
++        if ("ru".equals(language))
++            return LanguageEnums.RU;
++        return LanguageEnums.DEFAULT;
++    }
++
++    private Charset resolveCharset(JSONObject jsonObject) {
++        String encoding = jsonObject.getString("encoding");
++        if (encoding == null || encoding.isEmpty())
++            return Charset.forName("GBK");
++        return StandardCharsets.UTF_8;
++    }
++
+     private byte[] readGzip(byte[] gzip_request) throws Exception {
+         ByteArrayOutputStream stream = new ByteArrayOutputStream();
+         GZIPInputStream gzipInputStream = new GZIPInputStream(new ByteArrayInputStream(gzip_request));
+@@ -141,19 +152,7 @@
+      * @throws Exception
+      */
+     private void Receive(final int type, final JSONObject jsonObject, final LanguageEnums languageEnums) throws Exception {
+-        Charset charset;
+-        if (jsonObject.getString("encoding") == null || jsonObject.getString("encoding").isEmpty())
+-            charset = Charset.forName("GBK");
+-        else {
+-            switch (jsonObject.getString("encoding")) {
+-                case "UTF-8":
+-                    charset = StandardCharsets.UTF_8;
+-                    break;
+-                default:
+-                    charset = StandardCharsets.UTF_8;
+-                    break;
+-            }
+-        }
++        Charset charset = resolveCharset(jsonObject);
+         switch (type) {
+             /**
+              * 获取今天的公告记录
+@@ -1796,8 +1795,10 @@
+             RedisUtil redisUtil = RedisUtil.getRedisUtil();
+             String min = LocalDateTime.of(LocalDate.now(), LocalTime.MIN).format(DateTimeFormatter.ofPattern("MM/dd"));
+             RLock rLock = redisUtil.getRedissonClient().getLock("lock_" + soft.getAppkey());
++            boolean locked = false;
+             try {
+-                if (rLock.tryLock(5, 3, TimeUnit.SECONDS)) {
++                locked = rLock.tryLock(5, 3, TimeUnit.SECONDS);
++                if (locked) {
+                     /**
+                      * 设置启动次数
+                      */
+@@ -1823,9 +1824,12 @@
+                     }
+                 }
+             } catch (InterruptedException lock) {
+-                lock.printStackTrace();
++                Thread.currentThread().interrupt();
++                logger.warn("Statistics lock interrupted for appkey=" + soft.getAppkey(), lock);
+             } finally {
+-                rLock.unlock();
++                if (locked && rLock.isHeldByCurrentThread()) {
++                    rLock.unlock();
++                }
+             }
+         }
+     }
+--- a/src/main/java/armadillo/Application.java
++++ b/src/main/java/armadillo/Application.java
+@@ -558,9 +558,10 @@
+ 
+                     {
+                         RLock lock = redisUtil.getRedissonClient().getLock("test_lock");
++                        boolean locked = false;
+                         try {
+-                            boolean res = lock.tryLock(10, 3, TimeUnit.SECONDS);
+-                            if (res) {
++                            locked = lock.tryLock(10, 3, TimeUnit.SECONDS);
++                            if (locked) {
+                                 if (redisUtil.exists("test"))
+                                     redisUtil.incr("test");
+                                 else {
+@@ -568,9 +569,12 @@
+                                 }
+                             }
+                         } catch (InterruptedException interruptedException) {
+-                            interruptedException.printStackTrace();
++                            Thread.currentThread().interrupt();
++                            logger.warn("TestLock interrupted", interruptedException);
+                         } finally {
+-                            lock.unlock();
++                            if (locked && lock.isHeldByCurrentThread()) {
++                                lock.unlock();
++                            }
+                         }
+                     }
+                 });

@@ -1,0 +1,1 @@
+157737185eeec20bb541d21e97bcc540b78f26a3556a83484db9868b7deea607  build/libs/Ultima-1.0-SNAPSHOT.jar

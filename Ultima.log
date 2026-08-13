@@ -1,0 +1,119 @@
+02:54:33 INFO      Application:75   | netty-starter PID:2251
+02:54:33 INFO      Application:76   | netty-starter Armadillo -> 1.3.2
+02:54:33 INFO      Application:77   | netty-starter Copyright @ 2020 Armadillo Systems Incorporated. All rights reserved.
+02:54:33 INFO      Application:168  | netty-starter Netty transport: NIO (forced, Java 21.0.11)
+02:54:33 INFO      Application:92   | netty-starter Server Bind Port:(10000 - 10020)
+02:54:33 INFO      Application:93   | netty-starter IO Handler Thread Pool:256
+02:54:33 INFO      Application:94   | netty-starter Task Thread Pool:0
+02:54:33 INFO      Application:95   | netty-starter Youpk Bind Port:15000
+02:54:33 INFO      Application:96   | netty-starter Xposed Bind Port:16000
+02:54:33 INFO      Application:101  | netty-starter Youpk shell server started on port 15000
+02:54:33 INFO      Application:679  | Server Pool:0 Shell Start Success
+02:54:33 INFO      Application:109  | netty-starter Xposed shell server started on port 16000
+02:54:33 INFO      Application:720  | Server Pool:1 Xposed Shell Start Success
+02:54:33 INFO      Application:138  | Server Pool:2 Bind Server >> 10000
+02:54:33 INFO      Application:138  | Server Pool:3 Bind Server >> 10001
+02:54:33 INFO      Application:138  | Server Pool:4 Bind Server >> 10002
+02:54:33 INFO      Application:138  | Server Pool:6 Bind Server >> 10004
+02:54:33 INFO      Application:138  | Server Pool:7 Bind Server >> 10005
+02:54:33 INFO      Application:138  | Server Pool:5 Bind Server >> 10003
+02:54:33 INFO      Application:138  | Server Pool:8 Bind Server >> 10006
+02:54:33 INFO      Application:138  | Server Pool:9 Bind Server >> 10007
+02:54:33 INFO      Application:138  | Server Pool:10 Bind Server >> 10008
+02:54:33 INFO      Application:138  | Server Pool:11 Bind Server >> 10009
+02:54:33 INFO      Application:138  | Server Pool:12 Bind Server >> 10010
+02:54:33 INFO      Application:138  | Server Pool:13 Bind Server >> 10011
+02:54:33 INFO      Application:138  | Server Pool:14 Bind Server >> 10012
+02:54:33 INFO      Application:138  | Server Pool:15 Bind Server >> 10013
+02:54:33 INFO      Application:138  | Server Pool:16 Bind Server >> 10014
+02:54:33 INFO      Application:138  | Server Pool:17 Bind Server >> 10015
+02:54:33 INFO      Application:138  | Server Pool:18 Bind Server >> 10016
+02:54:33 INFO      Application:138  | Server Pool:19 Bind Server >> 10017
+02:54:33 INFO      Application:138  | Server Pool:20 Bind Server >> 10018
+02:54:33 INFO      Application:138  | Server Pool:21 Bind Server >> 10019
+02:54:33 INFO      Application:138  | Server Pool:22 Bind Server >> 10020
+02:54:33 INFO      Application:138  | Server Pool:23 Bind Server >> 8000
+02:54:33 INFO      Application:663  | netty-starter 工程数据目录:/www/arm/ 获取目录状态:/www/arm
+02:54:33 INFO      Application:117  | netty-starter Armadillo Start Success
+02:54:33 INFO      Application:294  | netty-starter Non-interactive mode detected, console command listener disabled.
+02:54:34 INFO      Application:141  | Accept Pool:0 Bind Server >> 10015 Success
+02:54:34 INFO      Application:141  | Accept Pool:0 Bind Server >> 10019 Success
+02:54:34 INFO      Application:141  | Accept Pool:0 Bind Server >> 10017 Success
+02:54:34 INFO      Application:141  | Accept Pool:0 Bind Server >> 10004 Success
+02:54:34 INFO      Application:141  | Accept Pool:0 Bind Server >> 10005 Success
+02:54:34 INFO      Application:141  | Accept Pool:0 Bind Server >> 10018 Success
+02:54:34 INFO      Application:141  | Accept Pool:0 Bind Server >> 10016 Success
+02:54:34 INFO      Application:141  | Accept Pool:0 Bind Server >> 10001 Success
+02:54:34 INFO      Application:141  | Accept Pool:0 Bind Server >> 10020 Success
+02:54:34 INFO      Application:141  | Accept Pool:0 Bind Server >> 10002 Success
+02:54:34 INFO      Application:141  | Accept Pool:0 Bind Server >> 10013 Success
+02:54:34 INFO      Application:141  | Accept Pool:0 Bind Server >> 10000 Success
+02:54:34 INFO      Application:141  | Accept Pool:0 Bind Server >> 10012 Success
+02:54:34 INFO      Application:141  | Accept Pool:0 Bind Server >> 10009 Success
+02:54:34 INFO      Application:141  | Accept Pool:0 Bind Server >> 10014 Success
+02:54:34 INFO      Application:141  | Accept Pool:0 Bind Server >> 10011 Success
+02:54:34 INFO      Application:141  | Accept Pool:0 Bind Server >> 8000 Success
+02:54:34 INFO      Application:141  | Accept Pool:0 Bind Server >> 10006 Success
+02:54:34 INFO      Application:141  | Accept Pool:0 Bind Server >> 10008 Success
+02:54:34 INFO      Application:141  | Accept Pool:0 Bind Server >> 10003 Success
+02:54:34 INFO      Application:141  | Accept Pool:0 Bind Server >> 10007 Success
+02:54:34 INFO      Application:141  | Accept Pool:0 Bind Server >> 10010 Success
+02:54:34 ERROR SocketController:107  | Worker Pool:1 Socket request failed: client=/127.0.0.1:33838, type=9000, error=RedisConnectionException: Unable to connect to Redis server: /127.0.0.1:6379
+org.redisson.client.RedisConnectionException: Unable to connect to Redis server: /127.0.0.1:6379
+	at org.redisson.connection.pool.ConnectionPool$1.lambda$run$0(ConnectionPool.java:159)
+	at org.redisson.misc.RedissonPromise.lambda$onComplete$0(RedissonPromise.java:183)
+	at io.netty.util.concurrent.DefaultPromise.notifyListener0(DefaultPromise.java:578)
+	at io.netty.util.concurrent.DefaultPromise.notifyListenersNow(DefaultPromise.java:552)
+	at io.netty.util.concurrent.DefaultPromise.notifyListeners(DefaultPromise.java:491)
+	at io.netty.util.concurrent.DefaultPromise.setValue0(DefaultPromise.java:616)
+	at io.netty.util.concurrent.DefaultPromise.setFailure0(DefaultPromise.java:609)
+	at io.netty.util.concurrent.DefaultPromise.tryFailure(DefaultPromise.java:117)
+	at org.redisson.misc.RedissonPromise.tryFailure(RedissonPromise.java:96)
+	at org.redisson.connection.pool.ConnectionPool.promiseFailure(ConnectionPool.java:329)
+	at org.redisson.connection.pool.ConnectionPool.lambda$createConnection$1(ConnectionPool.java:295)
+	at org.redisson.misc.RedissonPromise.lambda$onComplete$0(RedissonPromise.java:183)
+	at io.netty.util.concurrent.DefaultPromise.notifyListener0(DefaultPromise.java:578)
+	at io.netty.util.concurrent.DefaultPromise.notifyListeners0(DefaultPromise.java:571)
+	at io.netty.util.concurrent.DefaultPromise.notifyListenersNow(DefaultPromise.java:550)
+	at io.netty.util.concurrent.DefaultPromise.notifyListeners(DefaultPromise.java:491)
+	at io.netty.util.concurrent.DefaultPromise.setValue0(DefaultPromise.java:616)
+	at io.netty.util.concurrent.DefaultPromise.setFailure0(DefaultPromise.java:609)
+	at io.netty.util.concurrent.DefaultPromise.tryFailure(DefaultPromise.java:117)
+	at org.redisson.misc.RedissonPromise.tryFailure(RedissonPromise.java:96)
+	at org.redisson.client.RedisClient$2$2.run(RedisClient.java:250)
+	at io.netty.util.concurrent.AbstractEventExecutor.safeExecute(AbstractEventExecutor.java:164)
+	at io.netty.util.concurrent.SingleThreadEventExecutor.runAllTasks(SingleThreadEventExecutor.java:472)
+	at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:500)
+	at io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:989)
+	at io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: io.netty.channel.AbstractChannel$AnnotatedConnectException: Connection refused: /127.0.0.1:6379
+Caused by: java.net.ConnectException: Connection refused
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:694)
+	at java.base/sun.nio.ch.SocketChannelImpl.finishConnect(SocketChannelImpl.java:973)
+	at io.netty.channel.socket.nio.NioSocketChannel.doFinishConnect(NioSocketChannel.java:330)
+	at io.netty.channel.nio.AbstractNioChannel$AbstractNioUnsafe.finishConnect(AbstractNioChannel.java:334)
+	at io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:707)
+	at io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:655)
+	at io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:581)
+	at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:493)
+	at io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:989)
+	at io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:54:34 ERROR   SysConfigUtil:48   | Worker Pool:1 /www/arm/language/zh.properties (No such file or directory)
+java.io.FileNotFoundException: /www/arm/language/zh.properties (No such file or directory)
+	at java.base/java.io.FileInputStream.open0(Native Method)
+	at java.base/java.io.FileInputStream.open(FileInputStream.java:213)
+	at java.base/java.io.FileInputStream.<init>(FileInputStream.java:152)
+	at armadillo.utils.SysConfigUtil.getLanguageConfigUtil(SysConfigUtil.java:41)
+	at armadillo.result.Result.<init>(Result.java:22)
+	at armadillo.controller.SocketController.run(SocketController.java:110)
+	at io.netty.util.concurrent.AbstractEventExecutor.safeExecute(AbstractEventExecutor.java:164)
+	at io.netty.util.concurrent.SingleThreadEventExecutor.runAllTasks(SingleThreadEventExecutor.java:472)
+	at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:500)
+	at io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:989)
+	at io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+	at java.base/java.lang.Thread.run(Thread.java:1583)

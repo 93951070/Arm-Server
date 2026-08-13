@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Armadillo 管理后台 - 用户管理</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; }
+        .sidebar { position: fixed; left: 0; top: 0; width: 220px; height: 100vh; background: #2c3e50; padding-top: 20px; }
+        .sidebar .logo { color: #fff; text-align: center; font-size: 20px; font-weight: 700; padding: 15px 0; border-bottom: 1px solid #34495e; }
+        .sidebar a { display: block; color: #bdc3c7; text-decoration: none; padding: 14px 24px; font-size: 14px; transition: all 0.3s; }
+        .sidebar a:hover { background: #34495e; color: #fff; }
+        .sidebar a.active { background: #3498db; color: #fff; }
+        .main-content { margin-left: 220px; padding: 30px; }
+        .page-header h1 { color: #2c3e50; font-size: 28px; margin-bottom: 20px; }
+        .alert-error { background: #fee; color: #c33; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #fcc; }
+        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        th { background: #3498db; color: #fff; padding: 14px 16px; text-align: left; font-size: 14px; }
+        td { padding: 12px 16px; border-bottom: 1px solid #eee; font-size: 13px; color: #555; }
+        tr:hover td { background: #f8f9fa; }
+        .btn { display: inline-block; padding: 6px 14px; border: none; border-radius: 5px; font-size: 12px; cursor: pointer; text-decoration: none; color: #fff; margin-right: 4px; }
+        .btn-ban { background: #e74c3c; }
+        .btn-unban { background: #27ae60; }
+        .btn-delete { background: #95a5a6; }
+        .btn:hover { opacity: 0.85; }
+        .pagination { margin-top: 20px; text-align: center; }
+        .pagination a { display: inline-block; padding: 8px 14px; margin: 0 3px; border-radius: 5px; background: #fff; color: #3498db; text-decoration: none; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .pagination a:hover { background: #3498db; color: #fff; }
+        .pagination a.active { background: #3498db; color: #fff; }
+        .empty-msg { text-align: center; padding: 40px; color: #999; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">Armadillo</div>
+        <a th:href="@{/dashboard}">仪表盘</a>
+        <a th:href="@{/users}" class="active">用户管理</a>
+        <a th:href="@{/cards}">卡密管理</a>
+        <a th:href="@{/notices}">公告管理</a>
+        <a th:href="@{/versions}">版本管理</a>
+        <a th:href="@{/logout}" style="position:absolute; bottom:20px; width:100%;">退出登录</a>
+    </div>
+    <div class="main-content">
+        <div class="page-header">
+            <h1>用户管理</h1>
+        </div>
+        <div class="alert-error" th:if="${dbError}" th:text="${dbError}"></div>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>OpenID</th>
+                    <th>邮箱</th>
+                    <th>登录次数</th>
+                    <th>剩余天数</th>
+                    <th>到期时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="user : ${users}">
+                    <td th:text="${user.id}"></td>
+                    <td th:text="${user.openid != null ? user.openid : '-'}"></td>
+                    <td th:text="${user.email != null ? user.email : '-'}"></td>
+                    <td th:text="${user.loginCount != null ? user.loginCount : 0}"></td>
+                    <td th:text="${user.value != null ? user.value : 0}"></td>
+                    <td th:text="${user.expireTime != null ? user.expireTime : '-'}"></td>
+                    <td>
+                        <form method="post" action="/admin/users/ban" style="display:inline;">
+                            <input type="hidden" name="userId" th:value="${user.id}"/>
+                            <button type="submit" class="btn btn-ban" onclick="return confirm('确定封禁该用户？')">封禁</button>
+                        </form>
+                        <form method="post" action="/admin/users/unban" style="display:inline;">
+                            <input type="hidden" name="userId" th:value="${user.id}"/>
+                            <input type="hidden" name="days" value="30"/>
+                            <button type="submit" class="btn btn-unban">解封</button>
+                        </form>
+                        <form method="post" action="/admin/users/delete" style="display:inline;">
+                            <input type="hidden" name="userId" th:value="${user.id}"/>
+                            <button type="submit" class="btn btn-delete" onclick="return confirm('确定删除该用户？')">删除</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${users == null or users.isEmpty()}">
+                    <td colspan="7" class="empty-msg">暂无用户数据</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="pagination" th:if="${totalPages > 1}">
+            <a th:href="@{/users(page=0)}" th:if="${page > 0}">首页</a>
+            <a th:href="@{/users(page=${page - 1})}" th:if="${page > 0}">上一页</a>
+            <a th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+               th:href="@{/users(page=${i})}"
+               th:text="${i + 1}"
+               th:classappend="${i == page} ? 'active' : ''"></a>
+            <a th:href="@{/users(page=${page + 1})}" th:if="${page < totalPages - 1}">下一页</a>
+            <a th:href="@{/users(page=${totalPages - 1})}" th:if="${page < totalPages - 1}">末页</a>
+        </div>
+    </div>
+</body>
+</html>

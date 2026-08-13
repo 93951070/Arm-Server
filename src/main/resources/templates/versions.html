@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Armadillo 管理后台 - 版本管理</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; }
+        .sidebar { position: fixed; left: 0; top: 0; width: 220px; height: 100vh; background: #2c3e50; padding-top: 20px; }
+        .sidebar .logo { color: #fff; text-align: center; font-size: 20px; font-weight: 700; padding: 15px 0; border-bottom: 1px solid #34495e; }
+        .sidebar a { display: block; color: #bdc3c7; text-decoration: none; padding: 14px 24px; font-size: 14px; transition: all 0.3s; }
+        .sidebar a:hover { background: #34495e; color: #fff; }
+        .sidebar a.active { background: #3498db; color: #fff; }
+        .main-content { margin-left: 220px; padding: 30px; }
+        .page-header h1 { color: #2c3e50; font-size: 28px; margin-bottom: 20px; }
+        .alert-error { background: #fee; color: #c33; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #fcc; }
+        .version-form { background: #fff; border-radius: 10px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .version-form h2 { color: #2c3e50; font-size: 18px; margin-bottom: 15px; }
+        .form-row { display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; color: #555; margin-bottom: 6px; font-size: 14px; font-weight: 600; }
+        .form-group input, .form-group textarea { padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; font-family: inherit; }
+        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #3498db; }
+        .form-group textarea { min-height: 80px; resize: vertical; width: 100%; }
+        .checkbox-group { display: flex; align-items: center; gap: 8px; }
+        .checkbox-group input { width: 18px; height: 18px; }
+        .checkbox-group label { margin: 0; }
+        .btn { display: inline-block; padding: 10px 24px; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; color: #fff; }
+        .btn-primary { background: #3498db; }
+        .btn-delete { background: #95a5a6; padding: 6px 14px; font-size: 12px; }
+        .btn:hover { opacity: 0.85; }
+        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        th { background: #3498db; color: #fff; padding: 14px 16px; text-align: left; font-size: 14px; }
+        td { padding: 12px 16px; border-bottom: 1px solid #eee; font-size: 13px; color: #555; }
+        tr:hover td { background: #f8f9fa; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .badge-red { background: #f8d7da; color: #721c24; }
+        .badge-gray { background: #e2e3e5; color: #383d41; }
+        .empty-msg { text-align: center; padding: 40px; color: #999; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">Armadillo</div>
+        <a th:href="@{/dashboard}">仪表盘</a>
+        <a th:href="@{/users}">用户管理</a>
+        <a th:href="@{/cards}">卡密管理</a>
+        <a th:href="@{/notices}">公告管理</a>
+        <a th:href="@{/versions}" class="active">版本管理</a>
+        <a th:href="@{/logout}" style="position:absolute; bottom:20px; width:100%;">退出登录</a>
+    </div>
+    <div class="main-content">
+        <div class="page-header">
+            <h1>版本管理</h1>
+        </div>
+        <div class="alert-error" th:if="${dbError}" th:text="${dbError}"></div>
+        <div class="version-form">
+            <h2>添加版本</h2>
+            <form method="post" action="/admin/versions/create">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>版本号</label>
+                        <input type="number" name="versionCode" placeholder="如 132" required="required" style="width:120px;"/>
+                    </div>
+                    <div class="form-group">
+                        <label>版本名称</label>
+                        <input type="text" name="versionName" placeholder="如 1.3.2" required="required" style="width:150px;"/>
+                    </div>
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" name="forceUpdate" value="true" id="forceUpdate"/>
+                            <label for="forceUpdate">强制更新</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>更新说明</label>
+                    <textarea name="msg" placeholder="请输入更新说明" required="required"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">添加版本</button>
+            </form>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>版本号</th>
+                    <th>版本名称</th>
+                    <th>强制更新</th>
+                    <th>时间</th>
+                    <th>更新说明</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="ver : ${versions}">
+                    <td th:text="${ver.id}"></td>
+                    <td th:text="${ver.version}"></td>
+                    <td th:text="${ver.versionName}"></td>
+                    <td>
+                        <span th:if="${ver.versionMode}" class="badge badge-red">是</span>
+                        <span th:unless="${ver.versionMode}" class="badge badge-gray">否</span>
+                    </td>
+                    <td th:text="${ver.time != null ? ver.time : '-'}"></td>
+                    <td th:text="${ver.versionMsg != null ? ver.versionMsg : '-'}"></td>
+                    <td>
+                        <form method="post" action="/admin/versions/delete" style="display:inline;">
+                            <input type="hidden" name="id" th:value="${ver.id}"/>
+                            <button type="submit" class="btn btn-delete" onclick="return confirm('确定删除该版本？')">删除</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${versions == null or versions.isEmpty()}">
+                    <td colspan="7" class="empty-msg">暂无版本数据</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

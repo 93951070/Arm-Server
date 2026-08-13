@@ -1,0 +1,98 @@
+buildscript {
+    repositories {
+        maven { url 'https://maven.aliyun.com/repository/public' }
+        maven { url 'https://maven.aliyun.com/repository/spring' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.springframework.boot:spring-boot-gradle-plugin:2.7.18'
+    }
+}
+apply plugin: 'java'
+apply plugin: 'java-library'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+
+group 'armardillo_server'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 11
+targetCompatibility = 11
+def mainClassName = "armadillo.admin.ArmadilloWebApplication"
+bootJar {
+    mainClassName = "$mainClassName"
+}
+repositories {
+    maven { url 'https://maven.aliyun.com/repository/public' }
+    maven { url 'https://maven.aliyun.com/repository/spring' }
+    maven { url 'https://maven.aliyun.com/repository/google' }
+    mavenCentral()
+}
+configurations {
+    mybatisGenerator
+}
+dependencies {
+    testImplementation group: 'junit', name: 'junit', version: '4.12'
+    api project(":base")
+    implementation fileTree(dir:'libs',includes:['*jar'])
+    // https://mvnrepository.com/artifact/com.gitee.sunchenbin.mybatis.actable/mybatis-enhance-actable
+    implementation group: 'com.gitee.sunchenbin.mybatis.actable', name: 'mybatis-enhance-actable', version: '1.0.8.1.RELEASE'
+    // slf4j-simple 已移除,使用 Spring Boot 自带的 Logback
+    // https://mvnrepository.com/artifact/org.ow2.asm/asm-debug-all
+    implementation group: 'org.ow2.asm', name: 'asm-debug-all', version: '5.0.3'
+    // https://mvnrepository.com/artifact/commons-cli/commons-cli
+    implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
+    // https://mvnrepository.com/artifact/io.netty/netty-all
+    implementation group: 'io.netty', name: 'netty-all', version: '4.1.56.Final'
+    // https://mvnrepository.com/artifact/io.netty/netty-transport-native-epoll
+    implementation group: 'io.netty', name: 'netty-transport-native-epoll', version: '4.1.56.Final'
+
+    implementation 'org.springframework.boot:spring-boot-starter-web:2.7.18'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf:2.7.18'
+
+    mybatisGenerator 'org.mybatis.generator:mybatis-generator-core:1.3.5'
+    mybatisGenerator 'mysql:mysql-connector-java:5.1.40'
+    mybatisGenerator 'tk.mybatis:mapper:3.3.9'
+}
+def getDbProperties = {
+    def properties = new Properties()
+    file("src/main/resources/mybatis/config.properties").withInputStream { inputStream ->
+        properties.load(inputStream)
+    }
+    properties
+}
+task mybatisGenerate {
+    doLast {
+        def properties = getDbProperties()
+        ant.properties['targetProject'] = projectDir.path
+        ant.properties['driverClass'] = properties.getProperty("jdbc.driverClassName")
+        ant.properties['connectionURL'] = properties.getProperty("jdbc.url")
+        ant.properties['userId'] = properties.getProperty("jdbc.username")
+        ant.properties['password'] = properties.getProperty("jdbc.password")
+        ant.properties['src_main_java'] = sourceSets.main.java.srcDirs[0].path
+        ant.properties['src_main_resources'] = sourceSets.main.resources.srcDirs[0].path
+        ant.properties['modelPackage'] = properties.getProperty("package.model")
+        ant.properties['mapperPackage'] = properties.getProperty("package.mapper")
+        ant.properties['sqlMapperPackage'] = properties.getProperty("package.xml")
+        ant.taskdef(
+                name: 'mbgenerator',
+                classname: 'org.mybatis.generator.ant.GeneratorAntTask',
+                classpath: configurations.mybatisGenerator.asPath
+        )
+        ant.mbgenerator(overwrite: true,
+                configfile: 'src/main/resources/mybatis/generatorConfig.xml', verbose: true) {
+            propertyset {
+                propertyref(name: 'targetProject')
+                propertyref(name: 'userId')
+                propertyref(name: 'driverClass')
+                propertyref(name: 'connectionURL')
+                propertyref(name: 'password')
+                propertyref(name: 'src_main_java')
+                propertyref(name: 'src_main_resources')
+                propertyref(name: 'modelPackage')
+                propertyref(name: 'mapperPackage')
+                propertyref(name: 'sqlMapperPackage')
+            }
+        }
+    }
+}

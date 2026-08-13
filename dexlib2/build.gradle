@@ -1,0 +1,23 @@
+plugins {
+    id 'java-library'
+}
+
+group 'armardillo_server'
+version '1.0-SNAPSHOT'
+
+repositories {
+    maven { url 'https://maven.aliyun.com/repository/public' }
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation group: 'junit', name: 'junit', version: '4.12'
+    // https://mvnrepository.com/artifact/com.google.guava/guava
+    api group: 'com.google.guava', name: 'guava', version: '27.1-android'
+    // https://mvnrepository.com/artifact/com.google.code.findbugs/jsr305
+    api group: 'com.google.code.findbugs', name: 'jsr305', version: '1.3.9'
+    // https://mvnrepository.com/artifact/org.smali/smali
+    api (group: 'org.smali', name: 'smali', version: '2.4.0'){
+        exclude(module: 'dexlib2')
+    }
+}

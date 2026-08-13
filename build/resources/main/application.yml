@@ -1,0 +1,22 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /admin
+spring:
+  application:
+    name: Armadillo-Admin
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+armadillo:
+  admin:
+    username: admin
+    password: admin123
+    enabled: true
