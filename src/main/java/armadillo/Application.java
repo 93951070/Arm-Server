@@ -511,6 +511,7 @@ public class Application {
                         sqlSession.clearCache();
                         for (Cache cach : sqlSession.getConfiguration().getCaches())
                             cach.clear();
+                        SysConfigUtil.refreshCache();
                         System.out.println("刷新数据库缓存成功 ...");
                     }
                 }

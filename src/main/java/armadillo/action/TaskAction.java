@@ -15,7 +15,8 @@ import armadillo.utils.*;
 import com.alibaba.fastjson.JSONArray;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,7 +28,15 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class TaskAction implements Runnable, Comparable<TaskAction> {
-    private final Logger logger = Logger.getLogger(TaskAction.class);
+    private final Logger logger = LoggerFactory.getLogger(TaskAction.class);
+
+    // OkHttpClient 全局单例 (内部自带连接池和线程池, 线程安全)
+    private static final OkHttpClient sharedHttpClient = new OkHttpClient.Builder()
+            .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(120, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(120, java.util.concurrent.TimeUnit.SECONDS)
+            .build();
+
     private final long flags;
     private final String rule;
     private final List<TaskInfo> task;
@@ -42,6 +51,7 @@ public class TaskAction implements Runnable, Comparable<TaskAction> {
     private boolean is_delete = true;
     private volatile TaskStatus status = TaskStatus.Wait;
     private volatile Thread task_thread;
+    private final Object statusLock = new Object();
 
     public TaskAction(
             long flags,
@@ -123,15 +133,18 @@ public class TaskAction implements Runnable, Comparable<TaskAction> {
                                         redisUtil.setex(uuid, 60 * 60 * 24, JSONArray.toJSONString(task));
                                     task.clear();
                                     status = TaskStatus.Success;
+                                    synchronized (statusLock) { statusLock.notifyAll(); }
                                     return;
                                 } else {
                                     for (ShellHelper helper : (actionUtils.isSet(Long.parseLong(SysConfigUtil.getStringConfig("shell.flags")), flags) ? Application.getYoupkSet() : Application.getXposedSet())) {
                                         if (!helper.is_handle) {
                                             if (helper.SendShell(new ShellTask(uuid, md5, dow_url, QiniuUtils.getInstance().createTask("shell_" + uuid)), uuid, cacheFile)) {
-                                                task.add(new TaskInfo(100, Objects.requireNonNull(SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.start"))));
+                                                String startMsg = SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.start");
+                                                task.add(new TaskInfo(100, startMsg != null ? startMsg : "开始处理..."));
                                                 redisUtil.setex(uuid, 60 * 60 * 24, JSONArray.toJSONString(task));
                                                 helper.setState(task);
                                                 status = TaskStatus.Success;
+                                                synchronized (statusLock) { statusLock.notifyAll(); }
                                                 return;
                                             }
                                         }
@@ -140,11 +153,13 @@ public class TaskAction implements Runnable, Comparable<TaskAction> {
                                 Thread.sleep(1000 * 10);
                             } catch (Exception e) {
                                 is_delete = true;
-                                task.add(new TaskInfo(404, String.format(Objects.requireNonNull(SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.fail")), e.getMessage())));
+                                String failTpl = SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.fail");
+                                task.add(new TaskInfo(404, String.format(failTpl != null ? failTpl : "处理失败: %s", e.getMessage())));
                                 if (redisUtil.exists(uuid))
                                     redisUtil.setex(uuid, 60 * 60 * 24, JSONArray.toJSONString(task));
                                 task.clear();
                                 status = TaskStatus.Success;
+                                synchronized (statusLock) { statusLock.notifyAll(); }
                                 return;
                             }
                         }
@@ -156,7 +171,7 @@ public class TaskAction implements Runnable, Comparable<TaskAction> {
                         if (new File(Constant.getTmp(), uuid).exists()) {
                             handle(actionUtils, cacheFile, start);
                         } else {
-                            OkHttpClient okHttpClient = new OkHttpClient();
+                            OkHttpClient okHttpClient = sharedHttpClient;
                             Request request = new Request.Builder()
                                     .url(dow_url)
                                     .addHeader("Connection", "close")
@@ -171,7 +186,8 @@ public class TaskAction implements Runnable, Comparable<TaskAction> {
                                 logger.info("******************************************************************");
                                 logger.error(String.format("任务ID %s 发生异常:%s", uuid, response.message()));
                                 logger.info("******************************************************************");
-                                task.add(new TaskInfo(404, String.format(Objects.requireNonNull(SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.fail")), response.message())));
+                                String failTpl = SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.fail");
+                                task.add(new TaskInfo(404, String.format(failTpl != null ? failTpl : "处理失败: %s", response.message())));
                                 RedisUtil redisUtil = RedisUtil.getRedisUtil();
                                 if (redisUtil.exists(uuid))
                                     redisUtil.setex(uuid, 60 * 60 * 24, JSONArray.toJSONString(task));
@@ -180,13 +196,16 @@ public class TaskAction implements Runnable, Comparable<TaskAction> {
                         }
                     }
                     status = TaskStatus.Success;
+                    synchronized (statusLock) { statusLock.notifyAll(); }
                 } catch (Throwable e) {
                     is_delete = true;
                     status = TaskStatus.Fail;
+                    synchronized (statusLock) { statusLock.notifyAll(); }
                     logger.info("******************************************************************");
                     logger.error(String.format("任务ID %s 发生异常", uuid), e);
                     logger.info("******************************************************************");
-                    task.add(new TaskInfo(404, String.format(Objects.requireNonNull(SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.fail")), e.getMessage() == null ? e.toString() : e.getMessage())));
+                    String failTpl = SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.fail");
+                    task.add(new TaskInfo(404, String.format(failTpl != null ? failTpl : "处理失败: %s", e.getMessage() == null ? e.toString() : e.getMessage())));
                     RedisUtil redisUtil = RedisUtil.getRedisUtil();
                     if (redisUtil.exists(uuid))
                         redisUtil.setex(uuid, 60 * 60 * 24, JSONArray.toJSONString(task));
@@ -231,7 +250,9 @@ public class TaskAction implements Runnable, Comparable<TaskAction> {
                 logger.error(String.format("任务线程未捕获异常, 任务ID:%s", uuid), e);
                 is_delete = true;
                 status = TaskStatus.Fail;
-                task.add(new TaskInfo(404, String.format(Objects.requireNonNull(SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.fail")), e.getMessage() == null ? e.toString() : e.getMessage())));
+                synchronized (statusLock) { statusLock.notifyAll(); }
+                String failTpl = SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.fail");
+                task.add(new TaskInfo(404, String.format(failTpl != null ? failTpl : "处理失败: %s", e.getMessage() == null ? e.toString() : e.getMessage())));
                 RedisUtil redisUtil = RedisUtil.getRedisUtil();
                 if (redisUtil.exists(uuid))
                     redisUtil.setex(uuid, 60 * 60 * 24, JSONArray.toJSONString(task));
@@ -253,7 +274,8 @@ public class TaskAction implements Runnable, Comparable<TaskAction> {
                     status = TaskStatus.TimeOut;
                     logger.info(String.format("任务超时:%s", uuid));
                     task_thread.interrupt();
-                    task.add(new TaskInfo(404, Objects.requireNonNull(SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.timeout"))));
+                    String timeoutMsg = SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.timeout");
+                    task.add(new TaskInfo(404, timeoutMsg != null ? timeoutMsg : "处理超时"));
                     RedisUtil redisUtil = RedisUtil.getRedisUtil();
                     if (redisUtil.exists(uuid))
                         redisUtil.setex(uuid, 60 * 60 * 24, JSONArray.toJSONString(task));
@@ -268,11 +290,17 @@ public class TaskAction implements Runnable, Comparable<TaskAction> {
                         }
                     }
                     break;
-                } else
-                    Thread.sleep(1000);
+                } else {
+                    // wait/notify 替代 sleep(1000), 任务完成时立即响应
+                    long remaining = timeout - (System.currentTimeMillis() - start);
+                    if (remaining <= 0) continue;
+                    synchronized (statusLock) {
+                        statusLock.wait(Math.min(remaining, 1000));
+                    }
+                }
             }
         } catch (InterruptedException interruptedException) {
-            interruptedException.printStackTrace();
+            logger.error("线程中断异常", interruptedException);
         } finally {
             if (Constant.isDevelopment())
                 logger.info(String.format("任务:%s移除", uuid));
@@ -282,7 +310,8 @@ public class TaskAction implements Runnable, Comparable<TaskAction> {
 
     private void handle(ActionUtils actionUtils, File cacheFile, long start) throws Exception {
         zipFile = new ZipFile(new File(Constant.getTmp(), uuid));
-        task.add(new TaskInfo(100, Objects.requireNonNull(SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.start"))));
+        String startMsg = SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.start");
+        task.add(new TaskInfo(100, startMsg != null ? startMsg : "开始处理..."));
         RedisUtil redisUtil = RedisUtil.getRedisUtil();
         if (redisUtil.exists(uuid))
             redisUtil.setex(uuid, 60 * 60 * 24, JSONArray.toJSONString(task));
@@ -305,7 +334,8 @@ public class TaskAction implements Runnable, Comparable<TaskAction> {
             arm.addTransformer((BaseTransformer) newInstance);
         }
         arm.Run();
-        task.add(new TaskInfo(200, String.format(Objects.requireNonNull(SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.success")), (float) (System.currentTimeMillis() - start) / 1000)));
+        String successTpl = SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.success");
+        task.add(new TaskInfo(200, String.format(successTpl != null ? successTpl : "处理完成, 耗时 %.2f 秒", (float) (System.currentTimeMillis() - start) / 1000)));
         if (redisUtil.exists(uuid))
             redisUtil.setex(uuid, 60 * 60 * 24, JSONArray.toJSONString(task));
         task.clear();
@@ -324,5 +354,6 @@ public class TaskAction implements Runnable, Comparable<TaskAction> {
         if (Constant.isDevelopment())
             logger.info(String.format("强制终止任务ID:%s", uuid));
         status = TaskStatus.Stop;
+        synchronized (statusLock) { statusLock.notifyAll(); }
     }
 }

@@ -5,7 +5,6 @@
 <configuration>
     <properties resource="production/jdbc.properties" />
     <settings>
-        <setting name="lazyLoadingEnabled" value="true"/>
         <!-- 全局映射器启用缓存 -->
         <setting name="cacheEnabled" value="true" />
         <!-- 查询时，关闭关联对象即时加载以提高性能 -->
@@ -33,6 +32,9 @@
                 <property name="poolPingEnabled" value="true"/>
                 <property name="poolPingQuery" value="select now()"/>
                 <property name="poolPingConnectionsNotUsedFor" value="600000"/>
+                <property name="poolMaximumActiveConnections" value="50"/>
+                <property name="poolMaximumIdleConnections" value="20"/>
+                <property name="poolMaximumCheckoutTime" value="30000"/>
             </dataSource>
         </environment>
     </environments>
