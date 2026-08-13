@@ -28,7 +28,7 @@ dependencies {
     // https://mvnrepository.com/artifact/org.mybatis/mybatis
     api group: 'org.mybatis', name: 'mybatis', version: '3.5.5'
     // https://mvnrepository.com/artifact/redis.clients/jedis
-    api group: 'redis.clients', name: 'jedis', version: '3.3.0'
+    api group: 'redis.clients', name: 'jedis', version: '3.8.0'
     // https://mvnrepository.com/artifact/kxml2/kxml2
     api group: 'kxml2', name: 'kxml2', version: '2.3.0'
     // https://mvnrepository.com/artifact/xmlpull/xmlpull

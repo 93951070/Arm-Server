@@ -92,5 +92,46 @@ jdbc.password=kang
 
 ## 额外发现但未强制修改
 
-- 你上传源码 `base/build.gradle` 写的是 Jedis 3.3.0，但上传包内原有 fat JAR 实际包含 `jedis-3.8.0.jar`，说明源码依赖声明与旧构建产物不是完全同一轮构建。本次为降低风险，没有改变 Jedis/Redisson 大版本。
+- Jedis 源码依赖与 fat JAR 不一致的问题已在第二轮修复中处理：`base/build.gradle` 已统一为 Jedis 3.8.0。
 - 项目依赖外部 `/www/arm/language/*.properties`；本地没有这些文件时会打印 FileNotFoundException，通常不会阻止 `code` 返回，但 `msg` 可能为空。服务器若已有 `/www/arm/language` 则无需处理。
+
+## 2026-08-13 Jedis 依赖一致性修复与第二轮回归
+
+- `base/build.gradle`：Jedis 从 `3.3.0` 明确统一为 `3.8.0`。
+- 原 fat JAR 本身已经包含 `BOOT-INF/lib/jedis-3.8.0.jar`；本次把源码声明与运行产物统一，避免源码/部署依赖不一致。
+- 保持 Redisson `3.14.1`、Netty `4.1.56.Final`、MySQL Connector/J `5.1.49` 不变，避免一次引入多个兼容变量。
+- `base` 95 个 Java 源文件、主模块 20 个 Java 源文件均使用 Java 11 target 重新编译通过。
+- 使用重新编译的 `base` 与主模块 class 重新组装 Spring Boot fat JAR，并保留 Jedis 3.8.0 为嵌套依赖；新 JAR 已实际启动成功，Tomcat、Netty 10000-10020、8000 均可绑定。
+- 由于当前测试容器无法联网下载 Gradle 7.6.1 distribution，本轮不是 `./gradlew clean bootJar` 在线重建；而是使用项目 fat JAR 中已经解析好的依赖集合，对源码执行 Java 11 全量 javac 编译并重新组装 Boot JAR。启动与协议回归均针对该重新组装的交付 JAR执行。
+
+### 数据库成功路径回归
+
+当前容器无法联网安装 MySQL Server，因此测试库使用本机已有 HSQLDB，并按用户上传的 MySQL dump 中 `sys_user` 的字段结构建立等价测试表。仅测试环境 JDBC 驱动做了 HSQLDB 1.8 兼容包装；该测试驱动不进入交付 JAR，生产 `kang` / MySQL 配置完全保留。
+
+使用原 `SysUserMapper`、原 MyBatis、原 `SocketController` 2003/2004、原 MD5/Token 逻辑测试：
+
+- 2004 注册：`code=200`
+- 同账号 2003 登录：`code=200`，正常返回 `token`、`username`、`loginCount` 等字段
+- 错误密码：收到标准错误 Result，不再 EOF/0 字节
+- 重复注册：收到标准错误 Result，不再 EOF/0 字节
+
+### RSA / 交互协议第二轮回归
+
+本轮没有绕过验签：测试客户端使用项目真实 `en_private.txt` 对请求执行 RSA/PKCS#1 v1.5 私钥分段加密，并使用 `SHA1WithRSA` 对 `encryptedRequest + "Armadillo1110300103"` 签名；服务端使用 `sign_public.txt` 完成真实验签与公钥解密。响应继续由服务端私钥加密，测试客户端以公钥完整解密 JSON。
+
+- RSA 位数：1024 bit
+- 从 `en_private.txt` 推导的公钥与 `sign_public.txt` 字节级一致
+- 公钥 SHA-256：`eda77749d66439b2a6ed1fda15bc7c7c6573d28fa056a715caad8f2b78e4e929`
+- 2004/2003 成功路径均通过真实签名、真实请求加密与真实响应解密
+
+### Jedis 3.8.0 Smoke Test
+
+测试容器没有 Redis Server 二进制，因此使用本地最小 RESP 测试服务器验证交付 JAR 中同一份 Jedis 3.8.0 客户端：
+
+- `PING -> PONG`
+- `SET -> OK`
+- `GET -> ok`
+- `EXISTS -> true`
+- `DEL -> 1`
+
+这验证了交付产物内 Jedis 3.8.0 在当前 Java 运行环境下的基本 Redis 协议读写工作正常；生产环境仍应使用真实 Redis 6.2.21 进行最终部署验证。

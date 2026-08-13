@@ -1,0 +1,5 @@
+--- a/base/build.gradle
++++ b/base/build.gradle
+@@
+-    api group: 'redis.clients', name: 'jedis', version: '3.3.0'
++    api group: 'redis.clients', name: 'jedis', version: '3.8.0'
