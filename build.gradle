@@ -18,6 +18,11 @@ version '1.0-SNAPSHOT'
 
 sourceCompatibility = 11
 targetCompatibility = 11
+
+// Keep Java parameter names in bytecode for Spring MVC argument resolution.
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += ['-parameters']
+}
 def mainClassName = "armadillo.admin.ArmadilloWebApplication"
 bootJar {
     mainClassName = "$mainClassName"

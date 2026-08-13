@@ -1,0 +1,114 @@
+--- /mnt/data/armserver_rebuild/Arm-Server-Server/src/main/java/armadillo/admin/controller/AdminController.java	2026-08-12 18:10:14.000000000 +0000
++++ /mnt/data/adminfix_work/Arm-Server-Server/src/main/java/armadillo/admin/controller/AdminController.java	2026-08-13 04:53:46.142097885 +0000
+@@ -24,7 +24,7 @@
+     }
+ 
+     @PostMapping("/login")
+-    public String login(@RequestParam String username, @RequestParam String password, HttpSession session, Model model) {
++    public String login(@RequestParam("username") String username, @RequestParam("password") String password, HttpSession session, Model model) {
+         if (adminProperties.getUsername().equals(username) && adminProperties.getPassword().equals(password)) {
+             session.setAttribute("adminUser", username);
+             return "redirect:/dashboard";
+@@ -48,7 +48,7 @@
+     }
+ 
+     @GetMapping("/users")
+-    public String users(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size, Model model) {
++    public String users(@RequestParam(name = "page", defaultValue = "0") int page, @RequestParam(name = "size", defaultValue = "20") int size, Model model) {
+         Map<String, Object> data = adminService.getUsers(page, size);
+         model.addAllAttributes(data);
+         model.addAttribute("currentPage", "users");
+@@ -61,25 +61,25 @@
+     }
+ 
+     @PostMapping("/users/ban")
+-    public String banUser(@RequestParam int userId) {
++    public String banUser(@RequestParam("userId") int userId) {
+         adminService.banUser(userId);
+         return "redirect:/users";
+     }
+ 
+     @PostMapping("/users/unban")
+-    public String unbanUser(@RequestParam int userId, @RequestParam(defaultValue = "30") int days) {
++    public String unbanUser(@RequestParam("userId") int userId, @RequestParam(name = "days", defaultValue = "30") int days) {
+         adminService.unbanUser(userId, days);
+         return "redirect:/users";
+     }
+ 
+     @PostMapping("/users/delete")
+-    public String deleteUser(@RequestParam int userId) {
++    public String deleteUser(@RequestParam("userId") int userId) {
+         adminService.deleteUser(userId);
+         return "redirect:/users";
+     }
+ 
+     @GetMapping("/cards")
+-    public String cards(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size, Model model) {
++    public String cards(@RequestParam(name = "page", defaultValue = "0") int page, @RequestParam(name = "size", defaultValue = "20") int size, Model model) {
+         Map<String, Object> data = adminService.getCards(page, size);
+         model.addAllAttributes(data);
+         model.addAttribute("currentPage", "cards");
+@@ -92,7 +92,7 @@
+     }
+ 
+     @PostMapping("/cards/create")
+-    public String createCards(@RequestParam int type, @RequestParam int count, @RequestParam int value, Model model) {
++    public String createCards(@RequestParam("type") int type, @RequestParam("count") int count, @RequestParam("value") int value, Model model) {
+         java.util.List<String> cardKeys = adminService.createCards(type, count, value);
+         model.addAttribute("newCards", cardKeys);
+         model.addAttribute("success", "成功生成 " + cardKeys.size() + " 张卡密");
+@@ -103,7 +103,7 @@
+     }
+ 
+     @PostMapping("/cards/delete")
+-    public String deleteCard(@RequestParam int cardId) {
++    public String deleteCard(@RequestParam("cardId") int cardId) {
+         adminService.deleteCard(cardId);
+         return "redirect:/cards";
+     }
+@@ -117,13 +117,13 @@
+     }
+ 
+     @PostMapping("/notices/create")
+-    public String createNotice(@RequestParam String title, @RequestParam String msg) {
++    public String createNotice(@RequestParam("title") String title, @RequestParam("msg") String msg) {
+         adminService.addNotice(title, msg);
+         return "redirect:/notices";
+     }
+ 
+     @PostMapping("/notices/delete")
+-    public String deleteNotice(@RequestParam int id) {
++    public String deleteNotice(@RequestParam("id") int id) {
+         adminService.deleteNotice(id);
+         return "redirect:/notices";
+     }
+@@ -137,13 +137,13 @@
+     }
+ 
+     @PostMapping("/versions/create")
+-    public String createVersion(@RequestParam int versionCode, @RequestParam String versionName, @RequestParam(defaultValue = "false") boolean forceUpdate, @RequestParam String msg) {
++    public String createVersion(@RequestParam("versionCode") int versionCode, @RequestParam("versionName") String versionName, @RequestParam(name = "forceUpdate", defaultValue = "false") boolean forceUpdate, @RequestParam("msg") String msg) {
+         adminService.addVersion(versionCode, versionName, forceUpdate, msg);
+         return "redirect:/versions";
+     }
+ 
+     @PostMapping("/versions/delete")
+-    public String deleteVersion(@RequestParam int id) {
++    public String deleteVersion(@RequestParam("id") int id) {
+         adminService.deleteVersion(id);
+         return "redirect:/versions";
+     }
+--- /mnt/data/armserver_rebuild/Arm-Server-Server/build.gradle	2026-08-12 18:10:14.000000000 +0000
++++ /mnt/data/adminfix_work/Arm-Server-Server/build.gradle	2026-08-13 04:53:46.142245294 +0000
+@@ -18,6 +18,11 @@
+ 
+ sourceCompatibility = 11
+ targetCompatibility = 11
++
++// Keep Java parameter names in bytecode for Spring MVC argument resolution.
++tasks.withType(JavaCompile).configureEach {
++    options.compilerArgs += ['-parameters']
++}
+ def mainClassName = "armadillo.admin.ArmadilloWebApplication"
+ bootJar {
+     mainClassName = "$mainClassName"

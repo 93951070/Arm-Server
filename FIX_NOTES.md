@@ -135,3 +135,10 @@ jdbc.password=kang
 - `DEL -> 1`
 
 这验证了交付产物内 Jedis 3.8.0 在当前 Java 运行环境下的基本 Redis 协议读写工作正常；生产环境仍应使用真实 Redis 6.2.21 进行最终部署验证。
+
+## Admin 500 fix - 2026-08-13
+- Fixed Spring MVC request-parameter binding failure caused by missing Java parameter metadata in the prior manual rebuild.
+- Added explicit names to all `@RequestParam` annotations in `AdminController`.
+- Added `-parameters` to Gradle Java compilation.
+- Fully recompiled base and root modules with Java 11 target and `-parameters`.
+- Verified admin login/dashboard and all admin request-parameter endpoints.
