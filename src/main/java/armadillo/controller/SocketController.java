@@ -80,9 +80,17 @@ public class SocketController implements Runnable{
                 {
                     System.arraycopy(request, uuid_len + 4, data, 0, data.length);
                 }
-                FileOutputStream fileOutputStream = new FileOutputStream(new File(Constant.getTmp(), new String(uuid)));
+                File tmpDir = Constant.getTmp();
+                if (!tmpDir.exists()) {
+                    tmpDir.mkdirs();
+                    logger.info(String.format("创建tmp目录: %s", tmpDir.getAbsolutePath()));
+                }
+                File tmpFile = new File(tmpDir, new String(uuid));
+                FileOutputStream fileOutputStream = new FileOutputStream(tmpFile);
                 fileOutputStream.write(data);
                 fileOutputStream.close();
+                logger.info(String.format("文件上传成功: client=%s, uuid=%s, size=%d bytes, path=%s",
+                        inetSocketAddress, new String(uuid), data.length, tmpFile.getAbsolutePath()));
                 Writr(new Result(ResultBasic.GETSUCCESS, null, LanguageEnums.DEFAULT), Charset.forName("GBK"));
             } else {
                 DataInputStream dataInputStream = new DataInputStream(new ByteArrayInputStream(request));

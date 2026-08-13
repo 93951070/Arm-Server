@@ -181,8 +181,8 @@ public class Application {
                             ch.config().setReuseAddress(true);
                             ch.config().setKeepAlive(false);
                             ch.config().setTcpNoDelay(true);
-                            ch.pipeline().addLast(new ReadTimeoutHandler(5));
-                            ch.pipeline().addLast(new WriteTimeoutHandler(5));
+                            ch.pipeline().addLast(new ReadTimeoutHandler(60));
+                            ch.pipeline().addLast(new WriteTimeoutHandler(60));
                             ch.pipeline().addLast(new SmartByteBufDecoder());
                         }
                         ch.pipeline().addLast(handlerGroup, new ServerHandler());
@@ -661,6 +661,16 @@ public class Application {
         else
             System.setProperty("project.dir", new File(System.getenv("SYSTEMDRIVE"), "arm").getAbsolutePath());
         logger.info(String.format("工程数据目录:%s 获取目录状态:%s", System.getProperty("project.dir"), Constant.getRoot().getAbsolutePath()));
+        File tmpDir = Constant.getTmp();
+        if (!tmpDir.exists()) {
+            tmpDir.mkdirs();
+            logger.info(String.format("创建tmp目录: %s", tmpDir.getAbsolutePath()));
+        }
+        File taskDir = Constant.getTask();
+        if (!taskDir.exists()) {
+            taskDir.mkdirs();
+            logger.info(String.format("创建task目录: %s", taskDir.getAbsolutePath()));
+        }
     }
 
     public static HashSet<ShellHelper> getYoupkSet() {

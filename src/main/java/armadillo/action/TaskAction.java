@@ -183,6 +183,7 @@ public class TaskAction implements Runnable, Comparable<TaskAction> {
                     if (Constant.isDevelopment())
                         logger.info(String.format("任务监听到:%s终止", uuid));
                     is_delete = true;
+                    status = TaskStatus.Fail;
                     if (new File(Constant.getTask(), uuid).exists()) {
                         if (new File(Constant.getTask(), uuid).delete()) {
                             if (Constant.isDevelopment())
@@ -192,7 +193,8 @@ public class TaskAction implements Runnable, Comparable<TaskAction> {
                                 logger.info(String.format("任务状态:%s,删除任务资源:%s,失败", status, uuid));
                         }
                     }
-                } catch (Exception e) {
+                    throw threadDeath;
+                } catch (Throwable e) {
                     is_delete = true;
                     status = TaskStatus.Fail;
                     logger.info("******************************************************************");
@@ -238,6 +240,16 @@ public class TaskAction implements Runnable, Comparable<TaskAction> {
                         }
                     }
                 }
+            });
+            task_thread.setUncaughtExceptionHandler((t, e) -> {
+                logger.error(String.format("任务线程未捕获异常, 任务ID:%s", uuid), e);
+                is_delete = true;
+                status = TaskStatus.Fail;
+                task.add(new TaskInfo(404, String.format(Objects.requireNonNull(SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.fail")), e.getMessage() == null ? e.toString() : e.getMessage())));
+                RedisUtil redisUtil = RedisUtil.getRedisUtil();
+                if (redisUtil.exists(uuid))
+                    redisUtil.setex(uuid, 60 * 60 * 24, JSONArray.toJSONString(task));
+                task.clear();
             });
             task_thread.start();
             while (true) {
