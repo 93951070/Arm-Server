@@ -4,21 +4,21 @@ import armadillo.Constant;
 import armadillo.enums.LanguageEnums;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 public class SysConfigUtil {
-    private static final Logger logger = Logger.getLogger(SysConfigUtil.class);
+    private static final Logger logger = LoggerFactory.getLogger(SysConfigUtil.class);
 
     public static JSONObject getSysConfigUtil(String properties) {
         Properties pro = new Properties();
         try (InputStream is = SysConfigUtil.class.getClassLoader().getResourceAsStream(Constant.getProfile() + "/" + properties)) {
             pro.load(is);
         } catch (IOException e) {
-            e.printStackTrace();
             logger.error(e.getMessage(), e);
         }
         return JSONObject.parseObject(JSON.toJSONString(pro));
@@ -44,7 +44,6 @@ public class SysConfigUtil {
             pro.load(bufferedReader);
             return pro.getProperty(config);
         } catch (Exception e) {
-            e.printStackTrace();
             logger.error(e.getMessage(), e);
         }
         return null;
@@ -59,7 +58,6 @@ public class SysConfigUtil {
             pro.load(is);
             return pro.getProperty(config);
         } catch (IOException e) {
-            e.printStackTrace();
             logger.error(e.getMessage(), e);
         }
         return null;
@@ -73,7 +71,6 @@ public class SysConfigUtil {
              BufferedReader is = new BufferedReader(inputStreamReader)) {
             pro.load(is);
         } catch (IOException e) {
-            e.printStackTrace();
             logger.error(e.getMessage(), e);
         }
         return JSONObject.parseObject(JSON.toJSONString(pro));

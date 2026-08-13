@@ -33,8 +33,8 @@ import io.netty.util.internal.logging.Log4JLoggerFactory;
 import org.apache.commons.cli.*;
 import org.apache.ibatis.cache.Cache;
 import org.apache.ibatis.session.SqlSession;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 
@@ -49,7 +49,7 @@ import java.util.concurrent.*;
 
 
 public class Application {
-    private final static Logger logger = Logger.getLogger(Application.class);
+    private final static Logger logger = LoggerFactory.getLogger(Application.class);
     private final static Options options = new Options();
     private final static ServerBootstrap bootstrap = new ServerBootstrap();
     private final static HashSet<ShellHelper> YoupkSet = new HashSet<>();
@@ -74,7 +74,7 @@ public class Application {
                 String name = ManagementFactory.getRuntimeMXBean().getName();
                 logger.info(String.format("PID:%s", name.split("@")[0]));
                 logger.info("Armadillo -> " + Constant.getVER());
-                logger.info("Copyright @ 2020 Armadillo Systems Incorporated. All rights reserved.");
+                logger.info("版权所有 @ 2020 Armadillo Systems Incorporated. 保留所有权利。");
                 if (cmd.hasOption("http"))
                     Constant.httpport = Integer.parseInt(cmd.getOptionValue("http"));
                 if (cmd.hasOption("sp"))
@@ -89,36 +89,36 @@ public class Application {
                     Constant.youpkShell = Integer.parseInt(cmd.getOptionValue("s"));
                 if (cmd.hasOption("x"))
                     Constant.xposedShell = Integer.parseInt(cmd.getOptionValue("x"));
-                logger.info(String.format("Server Bind Port:(%d - %d)", Constant.start, Constant.end));
-                logger.info(String.format("IO Handler Thread Pool:%d", Constant.handleCount));
-                logger.info(String.format("Task Thread Pool:%d", Constant.getTask_pool().getActiveCount()));
-                logger.info(String.format("Youpk Bind Port:%d", Constant.youpkShell));
-                logger.info(String.format("Xposed Bind Port:%d", Constant.xposedShell));
+                logger.info(String.format("服务器绑定端口:(%d - %d)", Constant.start, Constant.end));
+                logger.info(String.format("IO处理线程池:%d", Constant.handleCount));
+                logger.info(String.format("任务线程池:%d", Constant.getTask_pool().getActiveCount()));
+                logger.info(String.format("Youpk绑定端口:%d", Constant.youpkShell));
+                logger.info(String.format("Xposed绑定端口:%d", Constant.xposedShell));
                 try {
                     YoupkServer = new ServerSocket(Constant.youpkShell);
                     YoupkServer.setReceiveBufferSize(1024 * 1024 * 20);
                     Constant.getRoot_pool().execute(Application::ShellRun);
-                    logger.info(String.format("Youpk shell server started on port %d", Constant.youpkShell));
+                    logger.info(String.format("Youpk脱壳服务已启动,端口:%d", Constant.youpkShell));
                 } catch (Exception e) {
-                    logger.warn(String.format("Failed to bind Youpk shell port %d: %s (shell service unavailable)", Constant.youpkShell, e.getMessage()));
+                    logger.warn(String.format("绑定Youpk脱壳端口%d失败:%s(脱壳服务不可用)", Constant.youpkShell, e.getMessage()));
                 }
                 try {
                     XposedServer = new ServerSocket(Constant.xposedShell);
                     XposedServer.setReceiveBufferSize(1024 * 1024 * 20);
                     Constant.getRoot_pool().execute(Application::XposedShellRun);
-                    logger.info(String.format("Xposed shell server started on port %d", Constant.xposedShell));
+                    logger.info(String.format("Xposed脱壳服务已启动,端口:%d", Constant.xposedShell));
                 } catch (Exception e) {
-                    logger.warn(String.format("Failed to bind Xposed shell port %d: %s (shell service unavailable)", Constant.xposedShell, e.getMessage()));
+                    logger.warn(String.format("绑定Xposed脱壳端口%d失败:%s(脱壳服务不可用)", Constant.xposedShell, e.getMessage()));
                 }
                 for (int i = 0; i <= Constant.end - Constant.start; i++)
                     Constant.getRoot_pool().execute(new bindServer(Constant.start + i, bootstrap));
                 Constant.getRoot_pool().execute(new bindServer(Constant.httpport, bootstrap));
                 InitDir();
-                logger.info("Armadillo Start Success");
+                logger.info("Armadillo启动成功");
                 InitOther();
             }
         } catch (ParseException e) {
-            e.printStackTrace();
+            logger.error("异常", e);
             formatter.printHelp("Armadillo", options, true);
         }
     }
@@ -135,16 +135,16 @@ public class Application {
         @Override
         public void run() {
             try {
-                logger.info(String.format("Bind Server >> %d", port));
+                logger.info(String.format("绑定服务器 >> %d", port));
                 ChannelFuture f = bootstrap.bind(port).addListener(future -> {
                     if (future.isSuccess())
-                        logger.info(String.format("Bind Server >> %d Success", port));
+                        logger.info(String.format("绑定服务器 >> %d 成功", port));
                 }).sync();
                 bindServers.put(port, f);
                 f.channel().closeFuture().sync();
-                logger.info(String.format("Port:%d Close ...", port));
+                logger.info(String.format("端口:%d 关闭...", port));
             } catch (InterruptedException interruptedException) {
-                interruptedException.printStackTrace();
+                logger.error("异常", interruptedException);
             }
         }
     }
@@ -160,12 +160,12 @@ public class Application {
             bossGroup = new EpollEventLoopGroup(bossThreads, Constant.getBossFactory());
             workerGroup = new EpollEventLoopGroup(maxThreads, Constant.getWorkerFactory());
             handlerGroup = new EpollEventLoopGroup(maxThreads, Constant.getHandlerFactory());
-            logger.info("Netty transport: Epoll (native)");
+            logger.info("Netty传输方式: Epoll(原生)");
         } else {
             bossGroup = new NioEventLoopGroup(bossThreads, Constant.getBossFactory());
             workerGroup = new NioEventLoopGroup(maxThreads, Constant.getWorkerFactory());
             handlerGroup = new NioEventLoopGroup(maxThreads, Constant.getHandlerFactory());
-            logger.info("Netty transport: NIO" + (forceNio ? " (forced, Java " + System.getProperty("java.version") + ")" : ""));
+            logger.info("Netty传输方式: NIO" + (forceNio ? "(强制, Java " + System.getProperty("java.version") + ")" : ""));
         }
         bootstrap.group(bossGroup, workerGroup)
                 .channel(useEpoll ? EpollServerSocketChannel.class : NioServerSocketChannel.class)
@@ -198,7 +198,6 @@ public class Application {
     }
 
     private static void InitDebugLog() {
-        PropertyConfigurator.configure(Application.class.getClassLoader().getResourceAsStream(Constant.getProfile() + "/log4j.properties"));
         if (Constant.isNettyDebug())
             InternalLoggerFactory.setDefaultFactory(Log4JLoggerFactory.INSTANCE);
     }
@@ -291,7 +290,7 @@ public class Application {
          * 指令监听 - 仅在交互模式(有控制台)下启用,非交互模式(nohup/systemd等)下跳过
          */
         if (System.console() == null) {
-            logger.info("Non-interactive mode detected, console command listener disabled.");
+            logger.info("检测到非交互模式,控制台命令监听已禁用。");
             return;
         }
         Scanner scanner = new Scanner(System.in);
@@ -409,7 +408,7 @@ public class Application {
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
         formatter.printHelp("Armadillo", options, true);
-        System.out.println("Waiting for input......");
+        System.out.println("等待输入......");
         while (scanner.hasNext()) {
             String instruction = scanner.nextLine();
             try {
@@ -425,11 +424,11 @@ public class Application {
                             sysUser.setExpireTime(new Date(System.currentTimeMillis()));
                             sysUser.setValue(0);
                             if (sysUserMapper.updateByPrimaryKey(sysUser) == 1)
-                                System.out.println(String.format("User %s closure Success", sysUser.getOpenid()));
+                                System.out.println(String.format("用户 %s 封禁成功", sysUser.getOpenid()));
                             else
-                                System.out.println(String.format("User %s closure Fail", sysUser.getOpenid()));
+                                System.out.println(String.format("用户 %s 封禁失败", sysUser.getOpenid()));
                         } else
-                            System.out.println(String.format("User %s does not exist", cmd.getOptionValue("c")));
+                            System.out.println(String.format("用户 %s 不存在", cmd.getOptionValue("c")));
                     }
                 }
                 if (cmd.hasOption("d")) {
@@ -450,11 +449,11 @@ public class Application {
                             sysUser.setExpireTime(new Date(System.currentTimeMillis()));
                             sysUser.setValue(0);
                             if (sysUserMapper.updateByPrimaryKey(sysUser) == 1)
-                                System.out.println(String.format("User %s closure Success", sysUser.getOpenid()));
+                                System.out.println(String.format("用户 %s 封禁成功", sysUser.getOpenid()));
                             else
-                                System.out.println(String.format("User %s closure Fail", sysUser.getOpenid()));
+                                System.out.println(String.format("用户 %s 封禁失败", sysUser.getOpenid()));
                         } else
-                            System.out.println(String.format("UserId %s does not exist", cmd.getOptionValue("cid")));
+                            System.out.println(String.format("用户ID %s 不存在", cmd.getOptionValue("cid")));
 
                     }
                 }
@@ -474,11 +473,11 @@ public class Application {
                     if (type < 0 || value < 0 || count < 0 || filename == null)
                         formatter.printHelp("Armadillo", options, true);
                     else if (count > 500000)
-                        System.out.println("Too many prepaid cards");
+                        System.out.println("卡密数量过多");
                     else if (type != 1 && type != 2 && type != 3)
-                        System.out.println("Wrong recharge card type");
+                        System.out.println("卡密类型错误");
                     else if (value > 100)
-                        System.out.println("Recharge card face value is too large");
+                        System.out.println("卡密面值过大");
                     else {
                         long start = System.currentTimeMillis();
                         StringBuilder stringBuilder = new StringBuilder();
@@ -497,13 +496,13 @@ public class Application {
                             sysCardMapper.insertAll(sysCards);
                         }
                         try {
-                            System.out.println(String.format("Insertion time -> %.2f seconds", (float) (System.currentTimeMillis() - start) / 1000));
+                            System.out.println(String.format("插入耗时 -> %.2f 秒", (float) (System.currentTimeMillis() - start) / 1000));
                             FileOutputStream outputStream = new FileOutputStream(new File(Constant.getRoot(), filename));
                             outputStream.write(stringBuilder.toString().getBytes());
                             outputStream.close();
-                            System.out.println("CreateCard Success");
+                            System.out.println("创建卡密成功");
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            logger.error("异常", e);
                         }
                     }
                 }
@@ -512,7 +511,7 @@ public class Application {
                         sqlSession.clearCache();
                         for (Cache cach : sqlSession.getConfiguration().getCaches())
                             cach.clear();
-                        System.out.println("Refresh the database cache Success ...");
+                        System.out.println("刷新数据库缓存成功 ...");
                     }
                 }
                 if (cmd.hasOption("ClosePort")) {
@@ -570,7 +569,7 @@ public class Application {
                             }
                         } catch (InterruptedException interruptedException) {
                             Thread.currentThread().interrupt();
-                            logger.warn("TestLock interrupted", interruptedException);
+                            logger.warn("测试锁被中断", interruptedException);
                         } finally {
                             if (locked && lock.isHeldByCurrentThread()) {
                                 lock.unlock();
@@ -683,10 +682,10 @@ public class Application {
 
     private static void ShellRun() {
         if (YoupkServer == null) {
-            logger.warn("YoupkServer is not available, shell service not started.");
+            logger.warn("YoupkServer不可用,脱壳服务未启动。");
             return;
         }
-        logger.info("Shell Start Success");
+        logger.info("脱壳服务启动成功");
         while (true) {
             ShellHelper helper = null;
             Socket client = null;
@@ -697,7 +696,7 @@ public class Application {
                     client.close();
                     throw new IOException(client.getInetAddress().getHostName() + "非法设备登录");
                 }
-                logger.info("Shell Client Address -> " + client.getInetAddress().getHostAddress());
+                logger.info("脱壳客户端地址 -> " + client.getInetAddress().getHostAddress());
                 client.setTcpNoDelay(true);
                 client.setSoTimeout(1000 * 60);
                 client.setOOBInline(true);
@@ -715,7 +714,7 @@ public class Application {
                     try {
                         client.close();
                     } catch (IOException ioException) {
-                        ioException.printStackTrace();
+                        logger.error("异常", ioException);
                     }
                 }
             }
@@ -724,10 +723,10 @@ public class Application {
 
     private static void XposedShellRun() {
         if (XposedServer == null) {
-            logger.warn("XposedServer is not available, xposed shell service not started.");
+            logger.warn("XposedServer不可用,Xposed脱壳服务未启动。");
             return;
         }
-        logger.info("Xposed Shell Start Success");
+        logger.info("Xposed脱壳服务启动成功");
         while (true) {
             ShellHelper helper = null;
             Socket client = null;
@@ -738,7 +737,7 @@ public class Application {
                     client.close();
                     throw new IOException(client.getInetAddress().getHostName() + "非法设备登录");
                 }
-                logger.info("Xposed Shell Client Address -> " + client.getInetAddress().getHostAddress());
+                logger.info("Xposed脱壳客户端地址 -> " + client.getInetAddress().getHostAddress());
                 client.setTcpNoDelay(true);
                 client.setSoTimeout(1000 * 60);
                 client.setOOBInline(true);
@@ -756,7 +755,7 @@ public class Application {
                     try {
                         client.close();
                     } catch (IOException ioException) {
-                        ioException.printStackTrace();
+                        logger.error("异常", ioException);
                     }
                 }
             }

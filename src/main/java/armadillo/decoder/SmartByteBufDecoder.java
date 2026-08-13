@@ -7,14 +7,15 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.FixedLengthFrameDecoder;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.List;
 
 public class SmartByteBufDecoder extends ByteToMessageDecoder {
-    private final Logger logger = Logger.getLogger(SmartByteBufDecoder.class);
+    private final Logger logger = LoggerFactory.getLogger(SmartByteBufDecoder.class);
     private final int base_length = 21;
 
     @Override
@@ -42,7 +43,7 @@ public class SmartByteBufDecoder extends ByteToMessageDecoder {
         byte[] sign = new byte[signLen];
         buffer.readBytes(request).readBytes(sign);
         if (!RSASignature.getInstance().doCheck(request, sign)) {
-            logger.warn(String.format("IP:%s -> 数据验签失败, dataLen=%d, signLen=%d",
+            logger.warn(String.format("IP:%s -> 数据验签失败, 数据长度=%d, 签名长度=%d",
                 ((InetSocketAddress) ctx.channel().remoteAddress()).getAddress().getHostAddress(),
                 dataLen, signLen));
             throw new DecoderException();

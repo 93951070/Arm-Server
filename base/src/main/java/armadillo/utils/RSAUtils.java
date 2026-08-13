@@ -1,6 +1,9 @@
 package armadillo.utils;
 
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.crypto.Cipher;
 import java.io.ByteArrayOutputStream;
 import java.security.*;
@@ -8,6 +11,8 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 public final class RSAUtils {
+
+    private static final Logger logger = LoggerFactory.getLogger(RSAUtils.class);
 
 
     /**
@@ -32,7 +37,7 @@ public final class RSAUtils {
             kpg.initialize(keyLength);
             return kpg.genKeyPair();
         } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
+            logger.error("异常", e);
             return null;
         }
     }

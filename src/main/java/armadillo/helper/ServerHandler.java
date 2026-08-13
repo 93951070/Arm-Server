@@ -14,7 +14,8 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.*;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,7 +35,7 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 
 public class ServerHandler extends ChannelInboundHandlerAdapter {
-    private final Logger logger = Logger.getLogger(ServerHandler.class);
+    private final Logger logger = LoggerFactory.getLogger(ServerHandler.class);
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -104,7 +105,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        System.out.println(cause.toString());
+        logger.error("异常", cause);
         ctx.close();
     }
 }

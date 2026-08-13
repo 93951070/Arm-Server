@@ -13,17 +13,17 @@ public class NettyServerStarter {
         Thread thread = new Thread(() -> {
             try {
                 String pid = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
-                logger.info("netty-starter PID:{}", pid);
+                logger.info("netty-starter 进程ID:{}", pid);
                 logger.info("netty-starter Armadillo -> 1.3.2");
-                logger.info("netty-starter Copyright @ 2020 Armadillo Systems Incorporated. All rights reserved.");
-                logger.info("netty-starter Server Bind Port:({} - {})", armadillo.Constant.start, armadillo.Constant.end);
-                logger.info("netty-starter IO Handler Thread Pool:{}", armadillo.Constant.handleCount);
-                logger.info("netty-starter Task Thread Pool:0");
-                logger.info("netty-starter Youpk Bind Port:{}", armadillo.Constant.youpkShell);
-                logger.info("netty-starter Xposed Bind Port:{}", armadillo.Constant.xposedShell);
+                logger.info("netty-starter 版权所有 @ 2020 Armadillo Systems Incorporated. 保留所有权利。");
+                logger.info("netty-starter 服务端绑定端口:({} - {})", armadillo.Constant.start, armadillo.Constant.end);
+                logger.info("netty-starter IO处理线程池:{}", armadillo.Constant.handleCount);
+                logger.info("netty-starter 任务线程池:0");
+                logger.info("netty-starter Youpk绑定端口:{}", armadillo.Constant.youpkShell);
+                logger.info("netty-starter Xposed绑定端口:{}", armadillo.Constant.xposedShell);
                 Application.main(new String[]{});
             } catch (Exception e) {
-                logger.error("netty-starter Netty Server Start Failed", e);
+                logger.error("netty-starter Netty服务端启动失败", e);
             }
         }, "netty-starter");
         thread.setDaemon(true);

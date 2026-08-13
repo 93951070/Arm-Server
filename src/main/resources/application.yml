@@ -2,6 +2,9 @@ server:
   port: 8080
   servlet:
     context-path: /admin
+    encoding:
+      charset: UTF-8
+      force: true
 spring:
   application:
     name: Armadillo-Admin
@@ -15,6 +18,12 @@ spring:
     suffix: .html
     mode: HTML
     encoding: UTF-8
+logging:
+  level:
+    root: INFO
+    armadillo: DEBUG
+  file:
+    name: Ultima.log
 armadillo:
   admin:
     username: admin

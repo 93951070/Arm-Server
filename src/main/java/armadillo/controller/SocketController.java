@@ -24,7 +24,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderException;
 import io.netty.util.ReferenceCountUtil;
 import org.apache.ibatis.session.SqlSession;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.redisson.api.RLock;
 
 import java.io.*;
@@ -42,7 +43,7 @@ import java.util.zip.CheckedInputStream;
 import java.util.zip.GZIPInputStream;
 
 public class SocketController implements Runnable{
-    private final Logger logger = Logger.getLogger(SocketController.class);
+    private final Logger logger = LoggerFactory.getLogger(SocketController.class);
     private final ChannelHandlerContext ctx;
     private final ByteBuf msg;
     private final InetSocketAddress inetSocketAddress;
@@ -89,7 +90,7 @@ public class SocketController implements Runnable{
                 FileOutputStream fileOutputStream = new FileOutputStream(tmpFile);
                 fileOutputStream.write(data);
                 fileOutputStream.close();
-                logger.info(String.format("文件上传成功: client=%s, uuid=%s, size=%d bytes, path=%s",
+                logger.info(String.format("文件上传成功: 客户端=%s, uuid=%s, 大小=%d 字节, 路径=%s",
                         inetSocketAddress, new String(uuid), data.length, tmpFile.getAbsolutePath()));
                 Writr(new Result(ResultBasic.GETSUCCESS, null, LanguageEnums.DEFAULT), Charset.forName("GBK"));
             } else {
@@ -111,8 +112,8 @@ public class SocketController implements Runnable{
                     Receive(type, jsonObject, languageEnums);
                 }
             }
-        } catch (Exception e) {
-            logger.error(String.format("Socket request failed: client=%s, type=%d, error=%s: %s",
+        } catch (Throwable e) {
+            logger.error(String.format("Socket请求处理失败: 客户端=%s, 类型=%d, 错误=%s: %s",
                     inetSocketAddress, type, e.getClass().getSimpleName(), e.getMessage()), e);
             if (ctx.channel().isActive()) {
                 Writr(new Result(ResultBasic.UNKNOWNFAIL, null, responseLanguage), responseCharset);
@@ -1044,6 +1045,8 @@ public class SocketController implements Runnable{
                     String task_md5 = jsonObject.getString("task_md5");
                     SysUserMapper sysUserMapper = sqlSession.getMapper(SysUserMapper.class);
                     SysUser sysUser = sysUserMapper.findTokenUser(token);
+                    logger.debug(String.format("上传请求: 客户端=%s, 用户=%s, flags=%d, 包名=%s, md5=%s",
+                            inetSocketAddress, sysUser != null ? sysUser.getOpenid() : "null", flags, pack, task_md5));
                     /**
                      * 校验用户信息
                      */
@@ -1060,9 +1063,12 @@ public class SocketController implements Runnable{
                             File cacheFile = new File(Constant.getCache(), task_md5);
                             outputStream.write(StreamUtil.readBytes(new FileInputStream(cacheFile)));
                             List<TaskInfo> taskInfos = new ArrayList<>();
-                            taskInfos.add(new TaskInfo(300, Objects.requireNonNull(SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.wait"))));
-                            taskInfos.add(new TaskInfo(100, Objects.requireNonNull(SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.start"))));
-                            taskInfos.add(new TaskInfo(200, String.format(Objects.requireNonNull(SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.cache.success")), (float) (System.currentTimeMillis() - start) / 1000)));
+                            String waitMsg = SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.wait");
+                            String startMsg = SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.start");
+                            String cacheSuccessMsg = SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.cache.success");
+                            taskInfos.add(new TaskInfo(300, waitMsg != null ? waitMsg : "请稍候..."));
+                            taskInfos.add(new TaskInfo(100, startMsg != null ? startMsg : "开始处理..."));
+                            taskInfos.add(new TaskInfo(200, String.format(cacheSuccessMsg != null ? cacheSuccessMsg : "缓存命中, 耗时 %.2f 秒", (float) (System.currentTimeMillis() - start) / 1000)));
                             RedisUtil redisUtil = RedisUtil.getRedisUtil();
                             redisUtil.setex(uuid, 60 * 60 * 24, JSONArray.toJSONString(taskInfos));
                             taskInfos.clear();
@@ -1082,6 +1088,7 @@ public class SocketController implements Runnable{
                             && of_task_count(sysUser, languageEnums, charset)
                             && of_method2native(flags, rule, languageEnums, charset)
                             && of_device_count(sysUser, jsonObject.getString("android_id"), languageEnums, charset)) {
+                        logger.info(String.format("任务校验通过, 开始创建任务: 用户=%s, flags=%d", sysUser.getOpenid(), flags));
                         ActionUtils actionUtils = new ActionUtils(languageEnums);
                         if (actionUtils.isSet(flags, 0X1) || actionUtils.isSet(flags, 0x200000000L)) {
                             if (of_shell_miss(task_md5, languageEnums, charset)) {
@@ -1098,6 +1105,9 @@ public class SocketController implements Runnable{
                             String task_id = UUID.randomUUID().toString();
                             Writr(QiniuUtils.getInstance().createTask(task_id, languageEnums), charset);
                         }
+                    }
+                    else {
+                        logger.warn(String.format("任务校验未通过: 用户=%s, flags=%d", sysUser != null ? sysUser.getOpenid() : "null", flags));
                     }
                 }
             }
@@ -1128,7 +1138,8 @@ public class SocketController implements Runnable{
                             && of_task_md5(task_md5, languageEnums, charset)
                             && of_method2native(flags, rule, languageEnums, charset)) {
                         List<TaskInfo> taskInfos = new ArrayList<>();
-                        taskInfos.add(new TaskInfo(300, Objects.requireNonNull(SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.wait"))));
+                        String waitMsg = SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.wait");
+                        taskInfos.add(new TaskInfo(300, waitMsg != null ? waitMsg : "请稍候..."));
                         RedisUtil redisUtil = RedisUtil.getRedisUtil();
                         redisUtil.setex(task_id, 60 * 60 * 24, JSONArray.toJSONString(taskInfos));
                         Writr(new Result(ResultBasic.VERIFYSUCCESS, task_id, languageEnums), charset);
@@ -1516,7 +1527,7 @@ public class SocketController implements Runnable{
                     .writeBytes(body);
             ctx.writeAndFlush(byteBuf).addListener(ChannelFutureListener.CLOSE);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("异常", e);
             ctx.close();
         }
     }
@@ -1541,10 +1552,10 @@ public class SocketController implements Runnable{
      * @return
      */
     private boolean of_package(String name, SysUser sysUser, LanguageEnums languageEnums, Charset charset) {
+        String illegalPackages = SysConfigUtil.getConfigUtil("Illegal.package");
         if (name == null
-                || Lists.newArrayList(Objects.requireNonNull(SysConfigUtil.getConfigUtil("Illegal.package"))
-                .split(","))
-                .contains(name)) {
+                || (illegalPackages != null && !illegalPackages.isEmpty()
+                    && Lists.newArrayList(illegalPackages.split(",")).contains(name))) {
             logger.info(
                     String.format("用户(%d):%s 非法APK包名:%s"
                             , sysUser.getId()
@@ -1594,11 +1605,10 @@ public class SocketController implements Runnable{
         String[] dex2c_flags = SysConfigUtil.getStringConfig("dex2c.flags").split(",");
         if (actionUtils.isSet(dex2c_flags, flags)) {
             if (rule == null || rule.isEmpty()) {
-                Writr(new Result(ResultBasic.CLASSOBIGFAIL, null, languageEnums).setMsg(0), charset);
+                Writr(new Result(ResultBasic.CLASSOBIGFAIL, null, languageEnums).setMsg(0, 0), charset);
                 return false;
             }
-            JsonArray separate = new JsonParser()
-                    .parse(new String(Base64.getDecoder().decode(rule.getBytes()), StandardCharsets.UTF_8))
+            JsonArray separate = JsonParser.parseString(new String(Base64.getDecoder().decode(rule.getBytes()), StandardCharsets.UTF_8))
                     .getAsJsonObject()
                     .getAsJsonArray(actionUtils.getValues(dex2c_flags, flags));
             int max = SysConfigUtil.getIntConfig("dex2c.class.max");
@@ -1626,11 +1636,10 @@ public class SocketController implements Runnable{
         String[] se_flags = SysConfigUtil.getStringConfig("se.flags").split(",");
         if (actionUtils.isSet(se_flags, flags)) {
             if (rule == null || rule.isEmpty()) {
-                Writr(new Result(ResultBasic.CLASSOBIGFAIL, null, languageEnums).setMsg(0), charset);
+                Writr(new Result(ResultBasic.CLASSOBIGFAIL, null, languageEnums).setMsg(0, 0), charset);
                 return false;
             }
-            JsonArray separate = new JsonParser()
-                    .parse(new String(Base64.getDecoder().decode(rule.getBytes()), StandardCharsets.UTF_8))
+            JsonArray separate = JsonParser.parseString(new String(Base64.getDecoder().decode(rule.getBytes()), StandardCharsets.UTF_8))
                     .getAsJsonObject()
                     .getAsJsonArray(actionUtils.getValues(se_flags, flags));
             int max = SysConfigUtil.getIntConfig("se.class.max");
@@ -1654,10 +1663,14 @@ public class SocketController implements Runnable{
      */
     private boolean of_shell(long flags, LanguageEnums languageEnums, Charset charset) throws IOException {
         ActionUtils actionUtils = new ActionUtils(languageEnums);
-        if (actionUtils.isSet(Long.parseLong(SysConfigUtil.getStringConfig("shell.flags")), flags) && Application.getYoupkSet().size() == 0) {
+        String shellFlagsStr = SysConfigUtil.getStringConfig("shell.flags");
+        String xposedFlagsStr = SysConfigUtil.getStringConfig("xposed.flags");
+        if (shellFlagsStr != null && !shellFlagsStr.isEmpty()
+                && actionUtils.isSet(Long.parseLong(shellFlagsStr), flags) && Application.getYoupkSet().size() == 0) {
             Writr(new Result(ResultBasic.SHELLFALL, null, languageEnums), charset);
             return false;
-        } else if (actionUtils.isSet(Long.parseLong(SysConfigUtil.getStringConfig("xposed.flags")), flags) && Application.getXposedSet().size() == 0) {
+        } else if (xposedFlagsStr != null && !xposedFlagsStr.isEmpty()
+                && actionUtils.isSet(Long.parseLong(xposedFlagsStr), flags) && Application.getXposedSet().size() == 0) {
             Writr(new Result(ResultBasic.XPOSEDSHELLFALL, null, languageEnums), charset);
             return false;
         } else
@@ -1833,7 +1846,7 @@ public class SocketController implements Runnable{
                 }
             } catch (InterruptedException lock) {
                 Thread.currentThread().interrupt();
-                logger.warn("Statistics lock interrupted for appkey=" + soft.getAppkey(), lock);
+                logger.warn("统计锁被中断, appkey=" + soft.getAppkey(), lock);
             } finally {
                 if (locked && rLock.isHeldByCurrentThread()) {
                     rLock.unlock();

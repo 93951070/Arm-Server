@@ -19,7 +19,8 @@ public class Result {
     public Result(ResultBasic resultBasic, Object data, LanguageEnums languageEnums) {
         this.resultBasic = resultBasic;
         this.code = resultBasic.getCode();
-        this.msg = SysConfigUtil.getLanguageConfigUtil(languageEnums, resultBasic.getConfig());
+        String langMsg = SysConfigUtil.getLanguageConfigUtil(languageEnums, resultBasic.getConfig());
+        this.msg = langMsg != null ? langMsg : resultBasic.getConfig();
         this.data = data;
         this.languageEnums = languageEnums;
     }
@@ -41,7 +42,13 @@ public class Result {
     }
 
     public Result setMsg(Object... msg) {
-        this.msg = String.format(Objects.requireNonNull(SysConfigUtil.getLanguageConfigUtil(languageEnums, resultBasic.getConfig())), msg);
+        String langMsg = SysConfigUtil.getLanguageConfigUtil(languageEnums, resultBasic.getConfig());
+        String template = langMsg != null ? langMsg : resultBasic.getConfig();
+        try {
+            this.msg = String.format(template, msg);
+        } catch (Exception e) {
+            this.msg = template;
+        }
         return this;
     }
 

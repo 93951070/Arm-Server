@@ -5,7 +5,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'org.springframework.boot:spring-boot-gradle-plugin:2.7.18'
+        classpath 'org.springframework.boot:spring-boot-gradle-plugin:3.3.2'
     }
 }
 apply plugin: 'java'
@@ -16,8 +16,8 @@ apply plugin: 'io.spring.dependency-management'
 group 'armardillo_server'
 version '1.0-SNAPSHOT'
 
-sourceCompatibility = 11
-targetCompatibility = 11
+sourceCompatibility = 17
+targetCompatibility = 17
 
 // Keep Java parameter names in bytecode for Spring MVC argument resolution.
 tasks.withType(JavaCompile).configureEach {
@@ -40,24 +40,20 @@ dependencies {
     testImplementation group: 'junit', name: 'junit', version: '4.12'
     api project(":base")
     implementation fileTree(dir:'libs',includes:['*jar'])
-    // https://mvnrepository.com/artifact/com.gitee.sunchenbin.mybatis.actable/mybatis-enhance-actable
-    implementation group: 'com.gitee.sunchenbin.mybatis.actable', name: 'mybatis-enhance-actable', version: '1.0.8.1.RELEASE'
     // slf4j-simple 已移除,使用 Spring Boot 自带的 Logback
-    // https://mvnrepository.com/artifact/org.ow2.asm/asm-debug-all
-    implementation group: 'org.ow2.asm', name: 'asm-debug-all', version: '5.0.3'
+    // ASM 通过 dex2jar 子项目传递依赖, 不单独声明避免版本冲突
     // https://mvnrepository.com/artifact/commons-cli/commons-cli
-    implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
+    implementation group: 'commons-cli', name: 'commons-cli', version: '1.11.0'
     // https://mvnrepository.com/artifact/io.netty/netty-all
-    implementation group: 'io.netty', name: 'netty-all', version: '4.1.56.Final'
-    // https://mvnrepository.com/artifact/io.netty/netty-transport-native-epoll
-    implementation group: 'io.netty', name: 'netty-transport-native-epoll', version: '4.1.56.Final'
+    implementation group: 'io.netty', name: 'netty-all', version: '4.1.137.Final'
+    // netty-transport-native-epoll 已移除, 强制使用 NIO 避免原生库兼容性问题
 
-    implementation 'org.springframework.boot:spring-boot-starter-web:2.7.18'
-    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf:2.7.18'
+    implementation 'org.springframework.boot:spring-boot-starter-web:3.3.2'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf:3.3.2'
 
-    mybatisGenerator 'org.mybatis.generator:mybatis-generator-core:1.3.5'
-    mybatisGenerator 'mysql:mysql-connector-java:5.1.40'
-    mybatisGenerator 'tk.mybatis:mapper:3.3.9'
+    mybatisGenerator 'org.mybatis.generator:mybatis-generator-core:1.4.2'
+    mybatisGenerator 'mysql:mysql-connector-java:8.0.33'
+    mybatisGenerator 'tk.mybatis:mapper:4.2.3'
 }
 def getDbProperties = {
     def properties = new Properties()

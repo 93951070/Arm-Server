@@ -9,6 +9,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,9 +40,8 @@ public class RedisUtil {
             pool = new JedisPool(jedisPoolConfig, ip, port, 10000);
         }
         Config config = new Config();
-        // Java 21+ 下 Epoll 原生库不兼容,强制使用 NIO
-        boolean forceNio = Double.parseDouble(System.getProperty("java.specification.version", "1.8")) >= 21;
-        config.setTransportMode(OsUtils.isOSLinux() && !forceNio ? TransportMode.EPOLL : TransportMode.NIO);
+        // 强制使用 NIO, 避免 Epoll 原生库兼容性问题
+        config.setTransportMode(TransportMode.NIO);
         SingleServerConfig singleServer = config.useSingleServer();
         singleServer.setAddress("redis://" + ip + ":" + port);
         if (password != null && !"".equals(password))
@@ -884,7 +884,7 @@ public class RedisUtil {
      */
     public Set<String> zrevrange(String key, long start, long end) {
         try (Jedis jedis = pool.getResource()) {
-            return jedis.zrevrange(key, start, end);
+            return new LinkedHashSet<>(jedis.zrevrange(key, start, end));
         }
     }
 
@@ -898,7 +898,7 @@ public class RedisUtil {
      */
     public Set<String> zrangebyscore(String key, String max, String min) {
         try (Jedis jedis = pool.getResource()) {
-            return jedis.zrevrangeByScore(key, max, min);
+            return new LinkedHashSet<>(jedis.zrevrangeByScore(key, max, min));
         }
     }
 
@@ -912,7 +912,7 @@ public class RedisUtil {
      */
     public Set<String> zrangeByScore(String key, double max, double min) {
         try (Jedis jedis = pool.getResource()) {
-            return jedis.zrevrangeByScore(key, max, min);
+            return new LinkedHashSet<>(jedis.zrevrangeByScore(key, max, min));
         }
     }
 

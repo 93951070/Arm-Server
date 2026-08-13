@@ -1,5 +1,8 @@
 package armadillo.utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
@@ -10,6 +13,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
 public class RSASignature {
+    private static final Logger logger = LoggerFactory.getLogger(RSASignature.class);
     private final String SIGN_ALGORITHMS = "SHA1WithRSA";
     private String publicKey;
     private static RSASignature instance = null;
@@ -18,7 +22,7 @@ public class RSASignature {
         try {
             publicKey = new String(LoaderRes.getInstance().getStaticResAsBytes("rsa/sign_public.txt")).trim();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("异常", e);
         }
     }
 
@@ -42,7 +46,7 @@ public class RSASignature {
             byte[] signed = signature.sign();
             return Base64.getEncoder().encodeToString(signed);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("异常", e);
         }
         return null;
     }
