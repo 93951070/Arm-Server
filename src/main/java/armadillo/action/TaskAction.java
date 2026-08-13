@@ -41,6 +41,7 @@ public class TaskAction implements Runnable, Comparable<TaskAction> {
     private ZipFile zipFile = null;
     private boolean is_delete = true;
     private volatile TaskStatus status = TaskStatus.Wait;
+    private volatile Thread task_thread;
 
     public TaskAction(
             long flags,
@@ -102,7 +103,7 @@ public class TaskAction implements Runnable, Comparable<TaskAction> {
                 }
                 return;
             }
-            Thread task_thread = new Thread(() -> {
+            task_thread = new Thread(() -> {
                 try {
                     File cacheFile = new File(Constant.getCache(), md5);
                     dow_url = QiniuUtils.getInstance().getTaskAddress(uuid);
@@ -179,21 +180,6 @@ public class TaskAction implements Runnable, Comparable<TaskAction> {
                         }
                     }
                     status = TaskStatus.Success;
-                } catch (ThreadDeath threadDeath) {
-                    if (Constant.isDevelopment())
-                        logger.info(String.format("任务监听到:%s终止", uuid));
-                    is_delete = true;
-                    status = TaskStatus.Fail;
-                    if (new File(Constant.getTask(), uuid).exists()) {
-                        if (new File(Constant.getTask(), uuid).delete()) {
-                            if (Constant.isDevelopment())
-                                logger.info(String.format("任务状态:%s,删除任务资源:%s,成功", status, uuid));
-                        } else {
-                            if (Constant.isDevelopment())
-                                logger.info(String.format("任务状态:%s,删除任务资源:%s,失败", status, uuid));
-                        }
-                    }
-                    throw threadDeath;
                 } catch (Throwable e) {
                     is_delete = true;
                     status = TaskStatus.Fail;
@@ -259,14 +245,14 @@ public class TaskAction implements Runnable, Comparable<TaskAction> {
                     if (Constant.isDevelopment())
                         logger.info(String.format("任务:%s终止", uuid));
                     status = TaskStatus.Stop;
-                    task_thread.stop();
+                    task_thread.interrupt();
                     break;
                 } else if (status == TaskStatus.Success || status == TaskStatus.Fail) {
                     break;
                 } else if (System.currentTimeMillis() - start > timeout || status == TaskStatus.TimeOut) {
                     status = TaskStatus.TimeOut;
                     logger.info(String.format("任务超时:%s", uuid));
-                    task_thread.stop();
+                    task_thread.interrupt();
                     task.add(new TaskInfo(404, Objects.requireNonNull(SysConfigUtil.getLanguageConfigUtil(languageEnums, "processing.timeout"))));
                     RedisUtil redisUtil = RedisUtil.getRedisUtil();
                     if (redisUtil.exists(uuid))
@@ -313,7 +299,7 @@ public class TaskAction implements Runnable, Comparable<TaskAction> {
         arm.setConfig(rule);
         arm.setSysUser(sysUser);
         for (ActionUtils.ActionFlag actionFlag : actionUtils.getFlags(flags)) {
-            PluginClassloader pluginClassloader = new PluginClassloader(ClassLoader.getSystemClassLoader(), Constant.getPlugin().getAbsolutePath() + File.separator + actionFlag.getJarPath());
+            PluginClassloader pluginClassloader = new PluginClassloader(Thread.currentThread().getContextClassLoader(), Constant.getPlugin().getAbsolutePath() + File.separator + actionFlag.getJarPath());
             Class<?> loadClass = pluginClassloader.loadClass(actionFlag.getJarCls());
             Object newInstance = loadClass.newInstance();
             arm.addTransformer((BaseTransformer) newInstance);

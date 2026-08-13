@@ -28,11 +28,17 @@ public class PluginClassloader extends ClassLoader {
     private byte[] loadClassData(String cls) {
         if (classpath != null) {
             if (classpath.endsWith(".zip") || classpath.endsWith(".jar")) {
+                String entryName = cls.replace(".", "/") + ".class";
                 try (ZipFile zipFile = new ZipFile(classpath)) {
-                    InputStream stream = zipFile.getInputStream(new ZipEntry(cls.replace(".", "/") + ".class"));
+                    ZipEntry entry = zipFile.getEntry(entryName);
+                    if (entry == null)
+                        return null;
+                    InputStream stream = zipFile.getInputStream(entry);
+                    if (stream == null)
+                        return null;
                     return StreamUtil.readBytes(stream);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    // class not in this plugin jar, return null to delegate to parent
                 }
             }
         }
